@@ -15,12 +15,13 @@ export const sortOptions = [
 ];
 
 export const heading = [
-  { title: "Order" },
-  { title: "Date" },
-  { title: "Customer" },
-  { title: "Total", alignment: "end" },
-  { title: "Payment status" },
-  { title: "Fulfillment status" },
+  { title: "Product" },
+  { title: "SKU" },
+  { title: "Barcode" },
+  { title: "Unavailable" },
+  { title: "Committed", },
+  { title: "Available" },
+  { title: "On hand" },
 ];
 
 

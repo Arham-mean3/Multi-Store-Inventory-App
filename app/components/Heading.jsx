@@ -1,25 +1,45 @@
-import { Button } from "@shopify/polaris";
-import React from "react";
+import { Button, Select } from "@shopify/polaris";
+import React, { useCallback, useContext, useEffect, useState } from "react";
+import { InventoryContext } from "../context/Inventory-Context";
+import PropTypes from 'prop-types';
 
-function Heading({ openModal }) {
+function Heading({ locations, selection }) {
+  const { handleModalChange, toggleImport } = useContext(InventoryContext);
+  const [selected, setSelected] = useState(locations);
+
+  useEffect(() => {
+    selection(selected[1].id);
+  }, []);
+
+  const locationArray = [...locations].reverse()
+
+  const handleSelectChange = useCallback((value) => {
+    setSelected(value);
+    selection(value);
+  }, []);
+
+  const options = locationArray.map((loc) => ({
+    label: loc.name,
+    value: loc.id,
+  }));
+
   return (
     <div className="flex justify-between items-center my-4">
-      <div>
+      <div className="flex gap-4">
         <h1 className="text-2xl font-bold">Multi-Store-Inventory-App</h1>
+        <Select
+          options={options}
+          onChange={handleSelectChange}
+          value={selected}
+          tone="magic"
+          requiredIndicator={false}
+        />
       </div>
       <div className="flex gap-4 items-center">
-        <Button
-          variant="secondary"
-          onClick={() => {
-            openModal("export");
-          }}
-        >
+        <Button variant="secondary" onClick={handleModalChange}>
           Export
         </Button>
-        <Button
-          variant="primary"
-          // onClick={() => openModal("import")} // Pass "import" type
-        >
+        <Button variant="primary" onClick={toggleImport}>
           Import
         </Button>
       </div>
@@ -27,4 +47,15 @@ function Heading({ openModal }) {
   );
 }
 
+
+Heading.propTypes = {
+  locations: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+};
+
 export default Heading;
+
