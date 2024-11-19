@@ -9,12 +9,31 @@ query inventoryItems {
           displayName
           barcode
           inventoryQuantity
+          title
+          product{
+            title
+            handle
+            hasOutOfStockVariants
+            featuredMedia{
+              preview{
+                image{
+                  url
+                  width
+                  height
+                }
+              }
+            }
+          }
         }
         inventoryLevels(first: 100){
           edges{
             node{
               location{
                 id
+                address {
+                  formatted
+                }
+                name
               }
               quantities(names: ["available", "incoming", "committed", "damaged", "on_hand", "quality_control", "reserved", "safety_stock"]){
                 name

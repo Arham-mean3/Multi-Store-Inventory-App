@@ -1,6 +1,12 @@
 import React from "react";
 import InventoryTable from "./InventoryTable";
-import { IndexTable, Text, useIndexResourceState } from "@shopify/polaris";
+import {
+  Divider,
+  IndexTable,
+  Text,
+  Thumbnail,
+  useIndexResourceState,
+} from "@shopify/polaris";
 import { Cell, RightCell } from "./Cell";
 
 export default function Inventory({ data }) {
@@ -51,7 +57,7 @@ export default function Inventory({ data }) {
     useIndexResourceState(orders);
 
   const rowMarkup = data.map(
-    ({ id, variant, sku, quantities, location }, index) => (
+    ({ id, variant, sku, inventoryLevels, quantities, location }, index) => (
       <IndexTable.Row
         id={id}
         key={id}
@@ -59,27 +65,54 @@ export default function Inventory({ data }) {
         position={index}
       >
         <IndexTable.Cell>
-          <Text variant="bodyMd" fontWeight="bold" as="span">
-            {variant.displayName}
-          </Text>
-        </IndexTable.Cell>
-        <IndexTable.Cell>{!sku ? "No SKU" : sku}</IndexTable.Cell>
-        <IndexTable.Cell>
-          {!variant.barCode ? "null" : variant.barCode}
-        </IndexTable.Cell>
-        <IndexTable.Cell>
-          {/* {<Cell data={unAvailable} type="unAvailable" />} */}
-          null
+          <div className="py-2">
+            <Thumbnail
+              source={variant?.product?.featuredMedia?.preview?.image?.url}
+              alt={variant.product.title}
+              size="small"
+            />
+          </div>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          {/* {<Cell val={committed} type="commited" />} */}
-          null
+          <div className="py-2">
+            <Text variant="bodyMd" fontWeight="bold" as="span">
+              {variant.product.title}
+            </Text>
+          </div>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          <RightCell type={"available"} />
+          <div className="py-2">{!sku ? "No SKU" : sku}</div>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          <RightCell type={"onHand"} />
+          <div className="py-2">
+            {!variant.barCode ? "null" : variant.barCode}{" "}
+          </div>
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <div className="py-2">
+            <Cell
+              val={quantities.damaged === 0 ? "0" : quantities.damaged}
+              type="commited"
+            />
+          </div>
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <div className="py-2">
+            <Cell
+              val={quantities.committed === 0 ? "0" : quantities.committed}
+              type="commited"
+            />
+          </div>
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <div className="py-2">
+            <RightCell val={quantities.available} type={"available"} />
+          </div>
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <div className="py-2">
+            <RightCell val={quantities.on_hand} type={"onHand"} />
+          </div>
         </IndexTable.Cell>
       </IndexTable.Row>
     ),

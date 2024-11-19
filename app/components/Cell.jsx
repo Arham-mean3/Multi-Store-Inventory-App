@@ -43,10 +43,10 @@ export function RightCell({ val, type }) {
 
   const activator = (
     <div className="flex w-full">
-      <div className="w-20">
+      <div className="w-32">
         <TextField
           type="number"
-          value={value}
+          value={data}
           onChange={handleChange}
           autoComplete="off"
           maxHeight={10}
@@ -57,7 +57,7 @@ export function RightCell({ val, type }) {
         onClick={togglePopoverActive}
         disclosure
       >
-        {data}
+        {/* {data} */}
       </Button>
     </div>
   );

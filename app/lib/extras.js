@@ -15,16 +15,15 @@ export const sortOptions = [
 ];
 
 export const heading = [
+  { title: "Thumbnail" },
   { title: "Product" },
   { title: "SKU" },
   { title: "Barcode" },
   { title: "Unavailable" },
-  { title: "Committed", },
+  { title: "Committed" },
   { title: "Available" },
   { title: "On hand" },
 ];
-
-
 
 // const fetcher = useFetcher();
 // const shopify = useAppBridge();

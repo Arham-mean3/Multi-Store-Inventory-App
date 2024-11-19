@@ -267,7 +267,6 @@ export default function InventoryTable({
         setMode={setMode}
       />
       <IndexTable
-        // condensed={useBreakpoints().smDown}
         resourceName={resourceName}
         itemCount={orders.length}
         selectedItemsCount={

@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a6f7886077bea7e16b6f1614edcff9e7"
-application_url = "https://locked-professor-bulgaria-parade.trycloudflare.com"
+application_url = "https://half-nb-mass-wealth.trycloudflare.com"
 embedded = true
 name = "multi-store-inventory-app"
 handle = "multi-store-inventory-app"
@@ -19,9 +19,9 @@ scopes = "read_locations,read_inventory,write_products"
 
 [auth]
 redirect_urls = [
-  "https://locked-professor-bulgaria-parade.trycloudflare.com/auth/callback",
-  "https://locked-professor-bulgaria-parade.trycloudflare.com/auth/shopify/callback",
-  "https://locked-professor-bulgaria-parade.trycloudflare.com/api/auth/callback"
+  "https://half-nb-mass-wealth.trycloudflare.com/auth/callback",
+  "https://half-nb-mass-wealth.trycloudflare.com/auth/shopify/callback",
+  "https://half-nb-mass-wealth.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
