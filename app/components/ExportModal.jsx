@@ -2,10 +2,10 @@ import { Modal, LegacyStack, ChoiceList } from "@shopify/polaris";
 import { useContext } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
 
-export default function ExportModal({ data, locations, currentLocation }) {
+export default function ExportModal({ data, all, locations, currentLocation }) {
   const CURRENT_PAGE = "current_page";
   const ALL_VARIANTS = "all_variants";
-  const SELECTED_CUSTOMERS = "selected_customers";
+  // const SELECTED_CUSTOMERS = "selected_customers";
   const CSV_EXCEL = "csv_excel";
   const CSV_PLAIN = "csv_plain";
 
@@ -21,51 +21,80 @@ export default function ExportModal({ data, locations, currentLocation }) {
   const locationsHeader = locations.map((location) => location.name).reverse();
   const locationId = locations.map((location) => location.id).reverse();
 
+  const dataset = selectedExport.includes(CURRENT_PAGE) ? data : all;
+
   const exportToCSV = () => {
     // Transform data into CSV format
     const headers = [
+      "Id",
+      "Image",
       "Handle",
-      "title",
+      "Title",
       "Option1 Name",
       "Option1 Value",
       "Option2 Name",
       "Option2 Value",
       "Option3 Name",
       "Option3 Value",
+      "Available",
+      "Committed",
+      "Damaged",
+      "Incoming",
+      "On Hand",
+      "Quality Control",
+      "Reserved",
+      "Safety Stock",
       "SKU",
       "Barcode",
       "HS Code",
       "COO",
       ...locationsHeader,
     ];
-    const rows = data.map(({ variant, sku, quantities, inventoryLevels }) => {
-      // Generate location-specific entries
-      const locationData = locationId.map(
-        (locId, index) =>
-          locId === currentLocation
-            ? quantities?.available || 0 // Current location shows quantities
-            : "not stocked", // Other locations show "not stocked"
-      );
-      return [
-        variant.product.handle,
-        variant.product.title,
-        "size",
-        variant.title,
-        "",
-        "",
-        "",
-        "",
-        sku || "No SKU",
-        variant.barCode || "null",
-        "",
-        "",
-        ...locationData,
-      ];
-    });
 
-    // Combine headers and rows
+    const rows = dataset.map(
+      ({ id, variant, COO, hsCode, sku, quantities }) => {
+        // Generate location-specific entries
+        const locationData = locationId.map(
+          (locId) =>
+            locId === currentLocation
+              ? quantities?.available || 0 // Current location shows quantities
+              : "not stocked", // Other locations show "not stocked"
+        );
+        return [
+          id,
+          variant.product.featuredMedia.preview.image.url,
+          variant.product.handle,
+          variant.product.title,
+          "size",
+          variant.title,
+          "",
+          "",
+          "",
+          "",
+          quantities.available,
+          quantities.committed,
+          quantities.damaged,
+          quantities.incoming,
+          quantities.on_hand,
+          quantities.quality_control,
+          quantities.reserved,
+          quantities.safety_stock,
+          sku || "",
+          variant.barCode || "",
+          hsCode || "",
+          COO || "",
+          ...locationData,
+        ];
+      },
+    );
+
     const csvContent = [headers, ...rows]
-      .map((row) => row.join(","))
+      .map(
+        (row) =>
+          selectedExportAs.includes(CSV_EXCEL)
+            ? `"${row.join('","')}"` // Wrap each cell in double quotes for Excel compatibility
+            : row.join(","), // Standard CSV format
+      )
       .join("\n");
 
     // Create a downloadable CSV file
@@ -88,9 +117,9 @@ export default function ExportModal({ data, locations, currentLocation }) {
       <Modal
         open={active}
         onClose={handleClose}
-        title="Export customers"
+        title="Export Inventory"
         primaryAction={{
-          content: "Export customers",
+          content: "Export Inventory",
           onAction: exportToCSV,
         }}
         secondaryActions={[
@@ -108,7 +137,7 @@ export default function ExportModal({ data, locations, currentLocation }) {
                 choices={[
                   { label: "Current page", value: CURRENT_PAGE },
                   { label: "All variants", value: ALL_VARIANTS },
-                  { label: "Selected customers", value: SELECTED_CUSTOMERS },
+                  // { label: "Selected customers", value: SELECTED_CUSTOMERS },
                 ]}
                 selected={selectedExport}
                 onChange={handleSelectedExport}

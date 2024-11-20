@@ -15,7 +15,6 @@ export const sortOptions = [
 ];
 
 export const heading = [
-  { title: "Thumbnail" },
   { title: "Product" },
   { title: "SKU" },
   { title: "Barcode" },

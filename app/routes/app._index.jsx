@@ -9,7 +9,8 @@ import ExportModal from "../components/ExportModal";
 import ImportModal from "../components/ImportModal";
 import { getAllLocations, getInventoryItemsQuery } from "../lib/queries";
 import { json, useLoaderData } from "@remix-run/react";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
+import { InventoryContext } from "../context/Inventory-Context";
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -38,6 +39,8 @@ export const loader = async ({ request }) => {
     .map(({ node }) => ({
       id: node.id,
       sku: node.sku,
+      COO: node.countryCodeOfOrigin,
+      hsCode: node.harmonizedSystemCode,
       variant: node.variant,
       quantities: node.inventoryLevels.edges.reduce((acc, { node }) => {
         node.quantities.forEach(({ name, quantity }) => {
@@ -69,33 +72,16 @@ export const loader = async ({ request }) => {
 export default function Index() {
   // STATE-HANDLING-START-START-HERE
   const [selected, setSelected] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
+
   // STATE-HANDLING-START-END-HERE
+  const itemsPerPage = 50;
 
   // GET-DATA-FROM-SERVER-HERE--------------
   const { data, locations } = useLoaderData();
+  const { transformedData } = useContext(InventoryContext);
 
-  // const deselectedInventoryData = useMemo(
-  //   () =>
-  //     data.map(({ node }) => ({
-  //       id: node.id,
-  //       sku: node.sku,
-  //       variant: node.variant,
-  //       quantities: node.inventoryLevels.edges.reduce((acc, { node }) => {
-  //         node.quantities.forEach(({ name, quantity }) => {
-  //           acc[name] = quantity;
-  //         });
-  //         return acc;
-  //       }, {}),
-  //       inventoryLevels: node.inventoryLevels.edges.map(({ node }) => ({
-  //         location: Array.isArray(node.location)
-  //           ? node.location.map((loc) => loc.id)
-  //           : node.location
-  //             ? [node.location.id] // Wrap single location object in an array
-  //             : [], // Fallback to empty array
-  //       })),
-  //     })),
-  //   [data],
-  // );
+  const inventoryData = transformedData.length > 0 ? transformedData : data;
 
   const deselectedLocationData = useMemo(
     () =>
@@ -108,10 +94,10 @@ export default function Index() {
   );
 
   const filteredInventoryData = useMemo(() => {
-    if (!selected) return data; // If no location is selected, return all data
+    if (!selected) return inventoryData; // If no location is selected, return all data
 
     // Filter by selected location ID
-    return data
+    return inventoryData
       .map((item) => ({
         ...item,
         inventoryLevels: item.inventoryLevels.filter((level) =>
@@ -121,15 +107,44 @@ export default function Index() {
       .filter((item) => item.inventoryLevels.length > 0); // Remove items with no matching inventoryLevels
   }, [selected]);
 
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+
+  const paginatedOrders = inventoryData.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage,
+  );
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  console.log("Parsed Data", transformedData)
+
   return (
     <div className="mx-10">
       <Heading locations={deselectedLocationData} selection={setSelected} />
-      <Inventory data={filteredInventoryData} />
+      <Inventory
+        data={inventoryData.length < 0 ? inventoryData : filteredInventoryData}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        paginatedOrders={paginatedOrders}
+        handleNextPage={handleNextPage}
+        handlePreviousPage={handlePreviousPage}
+      />
       <div>
         <ExportModal
           currentLocation={selected}
           locations={deselectedLocationData}
-          data={filteredInventoryData}
+          data={paginatedOrders}
+          all={filteredInventoryData}
         />
         <ImportModal />
       </div>

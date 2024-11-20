@@ -11,6 +11,10 @@ import { useState, useCallback } from "react";
 import { heading, sortOptions } from "../lib/extras";
 
 export default function InventoryTable({
+  currentPage,
+  totalPages,
+  handleNextPage,
+  handlePreviousPage,
   rowMarkup,
   orders,
   selectedResources,
@@ -274,6 +278,12 @@ export default function InventoryTable({
         }
         onSelectionChange={handleSelectionChange}
         headings={heading}
+        pagination={{
+          hasNext: currentPage < totalPages - 1,
+          hasPrevious: currentPage > 0,
+          onNext: handleNextPage,
+          onPrevious: handlePreviousPage,
+        }}
       >
         {rowMarkup}
       </IndexTable>

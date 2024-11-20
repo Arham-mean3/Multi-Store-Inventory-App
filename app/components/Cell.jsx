@@ -32,9 +32,7 @@ export function Cell({ val, type }) {
 
 export function RightCell({ val, type }) {
   const [popoverActive, setPopoverActive] = useState(false);
-  const [value, setValue] = useState("1");
-  const [data, setData] = useState(val);
-
+  const [value, setValue] = useState(val);
   const handleChange = useCallback((newValue) => setValue(newValue), []);
   const togglePopoverActive = useCallback(
     () => setPopoverActive((popoverActive) => !popoverActive),
@@ -46,7 +44,7 @@ export function RightCell({ val, type }) {
       <div className="w-32">
         <TextField
           type="number"
-          value={data}
+          value={value}
           onChange={handleChange}
           autoComplete="off"
           maxHeight={10}

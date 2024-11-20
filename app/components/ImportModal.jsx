@@ -1,7 +1,6 @@
 import {
   Checkbox,
   DropZone,
-  Frame,
   LegacyStack,
   Modal,
   Text,
@@ -15,6 +14,7 @@ export default function ImportModal() {
     file,
     checked,
     importBtn,
+    handleImport,
     toggleImport,
     handleCheckbox,
     handleDropZoneDrop,
@@ -60,7 +60,7 @@ export default function ImportModal() {
           title="Import inventory by CSV"
           primaryAction={{
             content: "Import Inventory",
-            onAction: toggleImport,
+            onAction: handleImport,
           }}
           secondaryActions={[
             {

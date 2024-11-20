@@ -1,10 +1,12 @@
 export const getInventoryItemsQuery = `
 query inventoryItems {
-  inventoryItems(first: 100) {
+  inventoryItems(first: 200) {
     edges {
       node {
         id
         sku
+        countryCodeOfOrigin
+        harmonizedSystemCode
         variant {
           displayName
           barcode
