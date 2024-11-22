@@ -40,3 +40,24 @@ export const heading = [
 //   }
 // }, [productId, shopify]);
 // const generateProduct = () => fetcher.submit({}, { method: "POST" });
+
+export const customdata = (data) => {
+  return data
+    .filter(({ node }) => node.variant.product.hasOutOfStockVariants)
+    .map(({ node }) => ({
+      id: node.id,
+      sku: node.sku,
+      COO: node.countryCodeOfOrigin,
+      hsCode: node.harmonizedSystemCode,
+      product: node.variant.product,
+      variant: node.variant,
+      inventoryLevels: {
+        location: node.inventoryLevels.edges.map(
+          ({ node }) => node.location,
+        ),
+        quantities: node.inventoryLevels.edges.map(
+          ({ node }) => node.quantities,
+        ),
+      },
+    }));
+};

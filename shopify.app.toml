@@ -1,10 +1,15 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a6f7886077bea7e16b6f1614edcff9e7"
-application_url = "https://bad-reality-playing-ruled.trycloudflare.com"
+application_url = "https://moore-fellow-interracial-fatty.trycloudflare.com"
 embedded = true
 name = "multi-store-inventory-app"
 handle = "multi-store-inventory-app"
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "store-for-customer-account-test.myshopify.com"
+include_config_on_deploy = true
 
 [webhooks]
 api_version = "2024-10"
@@ -15,19 +20,14 @@ api_version = "2024-10"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_locations,read_inventory,write_products,write_inventory"
+scopes = "read_inventory,read_locations,write_inventory,write_products"
 
 [auth]
 redirect_urls = [
-  "https://bad-reality-playing-ruled.trycloudflare.com/auth/callback",
-  "https://bad-reality-playing-ruled.trycloudflare.com/auth/shopify/callback",
-  "https://bad-reality-playing-ruled.trycloudflare.com/api/auth/callback"
+  "https://moore-fellow-interracial-fatty.trycloudflare.com/auth/callback",
+  "https://moore-fellow-interracial-fatty.trycloudflare.com/auth/shopify/callback",
+  "https://moore-fellow-interracial-fatty.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
 embedded = false
-
-[build]
-dev_store_url = "store-for-customer-account-test.myshopify.com"
-automatically_update_urls_on_dev = true
-include_config_on_deploy = true

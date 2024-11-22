@@ -18,16 +18,11 @@ export default function ExportModal({ data, all, locations, currentLocation }) {
     selectedExportAs,
   } = useContext(InventoryContext);
 
-  const locationsHeader = locations.map((location) => location.name).reverse();
-  const locationId = locations.map((location) => location.id).reverse();
-
   const dataset = selectedExport.includes(CURRENT_PAGE) ? data : all;
 
   const exportToCSV = () => {
     // Transform data into CSV format
     const headers = [
-      "Id",
-      "Image",
       "Handle",
       "Title",
       "Option1 Name",
@@ -36,55 +31,44 @@ export default function ExportModal({ data, all, locations, currentLocation }) {
       "Option2 Value",
       "Option3 Name",
       "Option3 Value",
-      "Available",
-      "Committed",
-      "Damaged",
-      "Incoming",
-      "On Hand",
-      "Quality Control",
-      "Reserved",
-      "Safety Stock",
       "SKU",
       "Barcode",
       "HS Code",
       "COO",
-      ...locationsHeader,
+      "Location",
+      "Committed",
+      "Damaged",
+      "Available",
+      "On Hand",
     ];
 
-    const rows = dataset.map(
-      ({ id, variant, COO, hsCode, sku, quantities }) => {
-        // Generate location-specific entries
-        const locationData = locationId.map(
-          (locId) =>
-            locId === currentLocation
-              ? quantities?.available || 0 // Current location shows quantities
-              : "not stocked", // Other locations show "not stocked"
-        );
-        return [
-          id,
-          variant.product.featuredMedia.preview.image.url,
-          variant.product.handle,
-          variant.product.title,
-          "size",
-          variant.title,
-          "",
-          "",
-          "",
-          "",
-          quantities.available,
-          quantities.committed,
-          quantities.damaged,
-          quantities.incoming,
-          quantities.on_hand,
-          quantities.quality_control,
-          quantities.reserved,
-          quantities.safety_stock,
-          sku || "",
-          variant.barCode || "",
-          hsCode || "",
-          COO || "",
-          ...locationData,
-        ];
+    console.log(dataset);
+
+    const rows = dataset.flatMap(
+      ({ variant, COO, hsCode, sku, quantities, inventoryLevels }) => {
+        return locations.map(({ id: locId, name: locationName }) => {
+          const isLocationAvailable = inventoryLevels.location.includes(locId);
+
+          return [
+            variant.product.handle,
+            variant.product.title,
+            "size",
+            variant.title,
+            "",
+            "",
+            "",
+            "",
+            sku || "",
+            variant.barCode || "",
+            hsCode || "",
+            COO || "",
+            locationName, // Render the location name
+            isLocationAvailable ? quantities.committed || 0 : "not stocked",
+            isLocationAvailable ? quantities.damaged || 0 : "not stocked",
+            isLocationAvailable ? quantities.available || 0 : "not stocked",
+            isLocationAvailable ? quantities.on_hand || 0 : "not stocked",
+          ];
+        });
       },
     );
 

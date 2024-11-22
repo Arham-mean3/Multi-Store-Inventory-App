@@ -6,19 +6,22 @@ import {
   Text,
   Thumbnail,
 } from "@shopify/polaris";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
 import { NoteIcon } from "@shopify/polaris-icons";
-export default function ImportModal() {
+export default function ImportModal({ InventoryUpdate }) {
   const {
     file,
     checked,
+    matchData,
     importBtn,
     handleImport,
     toggleImport,
     handleCheckbox,
     handleDropZoneDrop,
   } = useContext(InventoryContext);
+
+  const [loading, setLoading] = useState(false);
 
   const validImageTypes = ["image/gif", "image/jpeg", "image/png"];
 
@@ -50,52 +53,68 @@ export default function ImportModal() {
     </LegacyStack>
   );
 
-  return (
-    <div style={{ height: "300px" }}>
-      {/* <Frame> */}
-        <Modal
-          size="small"
-          open={importBtn}
-          onClose={toggleImport}
-          title="Import inventory by CSV"
-          primaryAction={{
-            content: "Import Inventory",
-            onAction: handleImport,
-          }}
-          secondaryActions={[
-            {
-              content: "Cancel",
-              onAction: toggleImport,
-            },
-          ]}
-        >
-          <Modal.Section>
-            <LegacyStack vertical>
-              <div className="">
-                <h3>
-                  This CSV file updates your Available or On hand inventory
-                  quantities.
-                </h3>
-              </div>
+  const text = matchData.length === 0 ? "Import Inventory" : "Update Inventory";
+  const actionFunc = matchData.length === 0 ? handleImport : InventoryUpdate;
 
-              <DropZone
-                accept=".csv"
-                errorOverlayText="File type must be .csv"
-                type="file"
-                onDrop={handleDropZoneDrop}
-                variableHeight
-              >
-                {fileUpload}
-                {uploadedFiles}
-              </DropZone>
-              <Checkbox
-                checked={checked}
-                label="Overwrite existing inventory"
-                onChange={handleCheckbox}
-              />
-            </LegacyStack>
-          </Modal.Section>
-        </Modal>
+  useEffect(() => {
+    if (matchData.length > 0) {
+      setLoading(true);
+      const timeout = setTimeout(() => {
+        setLoading(false);
+      }, 1000); // 1-second delay
+
+      return () => clearTimeout(timeout); // Clean up the timeout
+    }
+  }, [matchData.length > 0]);
+
+  return (
+    <div className="w-10 h-32 lg:h-80">
+      {/* <Frame> */}
+      <Modal
+        size="small"
+        open={importBtn}
+        onClose={toggleImport}
+        title="Import inventory by CSV"
+        primaryAction={{
+          content: text,
+          onAction: actionFunc,
+          disabled: file.length === 0,
+        }}
+        secondaryActions={[
+          {
+            content: "Cancel",
+            onAction: toggleImport,
+          },
+        ]}
+        loading={loading}
+      >
+        <Modal.Section>
+          <LegacyStack vertical>
+            <div className="">
+              <h3>
+                This CSV file updates your Available or On hand inventory
+                quantities.
+              </h3>
+            </div>
+
+            <DropZone
+              accept=".csv"
+              errorOverlayText="File type must be .csv"
+              type="file"
+              onDrop={handleDropZoneDrop}
+              variableHeight
+            >
+              {fileUpload}
+              {uploadedFiles}
+            </DropZone>
+            <Checkbox
+              checked={checked}
+              label="Overwrite existing inventory"
+              onChange={handleCheckbox}
+            />
+          </LegacyStack>
+        </Modal.Section>
+      </Modal>
       {/* </Frame> */}
     </div>
   );

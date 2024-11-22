@@ -3,15 +3,15 @@ import React, { useCallback, useContext, useEffect, useState } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
 import PropTypes from 'prop-types';
 
-function Heading({ locations, selection }) {
+function Heading({ location, selection }) {
   const { handleModalChange, toggleImport } = useContext(InventoryContext);
-  const [selected, setSelected] = useState(locations);
+  const [selected, setSelected] = useState(location);
 
   useEffect(() => {
     selection(selected[1].id);
   }, []);
 
-  const locationArray = [...locations].reverse()
+  const locationArray = [...location].reverse()
 
   const handleSelectChange = useCallback((value) => {
     setSelected(value);
@@ -49,7 +49,7 @@ function Heading({ locations, selection }) {
 
 
 Heading.propTypes = {
-  locations: PropTypes.arrayOf(
+  location: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,

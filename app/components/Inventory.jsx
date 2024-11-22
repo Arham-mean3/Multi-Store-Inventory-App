@@ -24,10 +24,8 @@ export default function Inventory({
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
     useIndexResourceState(data);
 
-    console.log("Paginated Order", paginatedOrders.map((val)=>val.quantities.available))
-
   const rowMarkup = paginatedOrders.map(
-    ({ id, variant, sku, quantities, location }, index) => (
+    ({ id, variant, sku, quantities }, index) => (
       <IndexTable.Row
         id={id}
         key={id}
@@ -45,7 +43,7 @@ export default function Inventory({
               <Text variant="bodyMd" fontWeight="bold" as="span">
                 {variant.product.title}
               </Text>
-              <p className="flex bg-gray-300 text-black text-[10px] w-4 font-bold rounded-sm justify-center items-center px-1">
+              <p className="flex bg-gray-300 text-black text-[10px] w-4 rounded-sm justify-center items-center px-2 py-1">
                 {variant.title}
               </p>
             </div>
@@ -56,7 +54,7 @@ export default function Inventory({
         </IndexTable.Cell>
         <IndexTable.Cell className="w-32">
           <div className="py-2">
-            {!variant.barCode ? "null" : variant.barCode}{" "}
+            {!variant.barcode ? "null" : variant.barcode}{" "}
           </div>
         </IndexTable.Cell>
         <IndexTable.Cell className="w-32">

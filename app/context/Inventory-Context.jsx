@@ -12,10 +12,12 @@ const INITIAL_STATES = {
   parsedData: [],
   active: true,
   importBtn: false,
+  matchData: [],
   setActive: () => {},
   selectedExport: [],
   selectedExportAs: [],
   transformedData: [],
+  setMatchData: () => {},
   handleImport: () => {},
   handleClose: () => {},
   handleSelectedExport: () => {},
@@ -33,6 +35,8 @@ export default function InventoryContextProvider({ children }) {
   const [importBtn, setImportBtn] = useState(false);
   const [checked, setChecked] = useState(false);
   const [file, setFile] = useState([]);
+  const [locations, setLocations] = useState([]);
+  console.log("Locations data", locations);
 
   // Export Modal Button State
   const [active, setActive] = useState(false);
@@ -42,6 +46,10 @@ export default function InventoryContextProvider({ children }) {
   // Parsed-Data From Papa-Parser
 
   const [parsedData, setParsedData] = useState([]);
+
+  // Match-Data
+
+  const [matchData, setMatchData] = useState([]);
 
   // Effects
 
@@ -54,6 +62,8 @@ export default function InventoryContextProvider({ children }) {
   const toggleImport = useCallback(() => {
     setImportBtn((importBtn) => !importBtn);
     if (!importBtn) setFile([]);
+    setMatchData([]);
+    setParsedData([]);
   }, []);
 
   const handleCheckbox = useCallback((value) => setChecked(value), []);
@@ -87,7 +97,6 @@ export default function InventoryContextProvider({ children }) {
           console.error("Error parsing CSV:", error);
         },
       });
-      setImportBtn(false);
     }
   };
 
@@ -97,44 +106,39 @@ export default function InventoryContextProvider({ children }) {
     [],
   );
 
-  const transformedData = useMemo(() => {
+  let transformedData = useMemo(() => {
     if (!parsedData || parsedData.length === 0) return [];
 
     return parsedData.map((row) => ({
-      id: row["Id"], // Assuming "Handle" is equivalent to `id`
+      sku: row["SKU"] || null,
+      COO: row["COO"] || null,
+      hsCode: row["HS Code"] || null,
+      location: row["Location"] || "",
       variant: {
         title: row["Option1 Value"] || "",
         barCode: row["Barcode"] || null,
         product: {
           title: row["Title"] || "",
           handle: row["Handle"] || "",
-          featuredMedia: {
-            preview: {
-              image: {
-                url: row["Image"] || "",
-              },
-            },
-          },
         },
       },
       quantities: {
-        available: parseFloat(row["Available"]),
-        committed: parseFloat(row["Committed"]),
-        damaged: parseFloat(row["Damaged"]),
-        incoming: parseFloat(["Incoming"]),
-        on_hand: parseFloat(row["On Hand"]),
-        quality_control: parseFloat(row["Quality Control"]),
-        reserved: parseFloat(row["Reserved"]),
-        safety_stock: parseFloat(row["Safety Stock"]),
+        available:
+          row["Available"] === "not stocked" ? 0 : parseFloat(row["Available"]),
+        committed:
+          row["Committed"] === "not stocked" ? 0 : parseFloat(row["Committed"]),
+        damaged:
+          row["Damaged"] === "not stocked" ? 0 : parseFloat(row["Damaged"]),
+        on_hand:
+          row["On Hand"] === "not stocked" ? 0 : parseFloat(row["On Hand"]),
       },
-      sku: row["SKU"] || null,
-      COO: row["COO"] || null,
-      hsCode: row["HS Code"] || null,
     }));
   }, [parsedData]);
 
+
   const value = {
     active,
+    matchData,
     selectedExport,
     selectedExportAs,
     importBtn,
@@ -142,6 +146,8 @@ export default function InventoryContextProvider({ children }) {
     file,
     parsedData,
     transformedData,
+    setMatchData,
+    setLocations,
     handleImport,
     handleModalChange,
     handleClose,

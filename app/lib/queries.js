@@ -8,11 +8,13 @@ query inventoryItems {
         countryCodeOfOrigin
         harmonizedSystemCode
         variant {
+          id
           displayName
           barcode
           inventoryQuantity
           title
           product{
+            id
             title
             handle
             hasOutOfStockVariants
@@ -64,3 +66,61 @@ query {
     }
   }
 }`;
+
+// Updating Queries
+
+export const updateProductQuery = `
+mutation UpdateProductWithNewMedia($input: ProductInput!, $media: [CreateMediaInput!]) {
+  productUpdate(input: $input, media: $media) {
+    product {
+      id
+      title
+      handle
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`;
+
+export const updateProductVariantQuery = `
+mutation productVariantsBulkUpdate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+  productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+    product {
+      id
+    }
+    productVariants {
+      barcode
+      sku
+      inventoryItem {
+        harmonizedSystemCode
+        countryCodeOfOrigin
+        sku
+      }
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`;
+
+export const updateInventoryQuantitiesQuery = `
+mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
+  inventoryAdjustQuantities(input: $input) {
+    inventoryAdjustmentGroup {
+      changes {
+        name
+        delta
+      }
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`;
