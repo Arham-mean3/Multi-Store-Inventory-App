@@ -2,7 +2,7 @@ import { Modal, LegacyStack, ChoiceList } from "@shopify/polaris";
 import { useContext } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
 
-export default function ExportModal({ data, all, locations, currentLocation }) {
+export default function ExportModal({ data, all, locations }) {
   const CURRENT_PAGE = "current_page";
   const ALL_VARIANTS = "all_variants";
   // const SELECTED_CUSTOMERS = "selected_customers";
@@ -59,7 +59,7 @@ export default function ExportModal({ data, all, locations, currentLocation }) {
             "",
             "",
             sku || "",
-            variant.barCode || "",
+            variant.barcode || "",
             hsCode || "",
             COO || "",
             locationName, // Render the location name
@@ -121,7 +121,6 @@ export default function ExportModal({ data, all, locations, currentLocation }) {
                 choices={[
                   { label: "Current page", value: CURRENT_PAGE },
                   { label: "All variants", value: ALL_VARIANTS },
-                  // { label: "Selected customers", value: SELECTED_CUSTOMERS },
                 ]}
                 selected={selectedExport}
                 onChange={handleSelectedExport}

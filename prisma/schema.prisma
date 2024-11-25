@@ -30,3 +30,12 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+model ProcessingState {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g., "import_inventory"
+  url       String
+  isActive  Boolean  @default(false) // Tracks if the process is active
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -124,3 +124,11 @@ mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
   }
 }
 `;
+
+export const getStoreUrl = `
+query ShopMetafield {
+  shop{
+    url
+  }
+}
+`;

@@ -26,6 +26,7 @@ const INITIAL_STATES = {
   handleCheckbox: () => {},
   toggleImport: () => {},
   handleDropZoneDrop: () => {},
+  setImportBtn: () => {},
 };
 
 export const InventoryContext = createContext(INITIAL_STATES);
@@ -148,6 +149,7 @@ export default function InventoryContextProvider({ children }) {
     transformedData,
     setMatchData,
     setLocations,
+    setImportBtn,
     handleImport,
     handleModalChange,
     handleClose,

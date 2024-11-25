@@ -6,10 +6,11 @@ import {
   Text,
   Thumbnail,
 } from "@shopify/polaris";
-import { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
 import { NoteIcon } from "@shopify/polaris-icons";
-export default function ImportModal({ InventoryUpdate }) {
+
+const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
   const {
     file,
     checked,
@@ -92,30 +93,43 @@ export default function ImportModal({ InventoryUpdate }) {
           <LegacyStack vertical>
             <div className="">
               <h3>
-                This CSV file updates your Available or On hand inventory
-                quantities.
+                {active ? (
+                  <strong>
+                    You can't upload the file unless previous import is
+                    completed. It will take {timeShown}.
+                  </strong>
+                ) : (
+                  "This CSV file updates your Available or On hand inventory quantities."
+                )}
               </h3>
             </div>
 
-            <DropZone
-              accept=".csv"
-              errorOverlayText="File type must be .csv"
-              type="file"
-              onDrop={handleDropZoneDrop}
-              variableHeight
-            >
-              {fileUpload}
-              {uploadedFiles}
-            </DropZone>
-            <Checkbox
-              checked={checked}
-              label="Overwrite existing inventory"
-              onChange={handleCheckbox}
-            />
+            {!active && (
+              <>
+                <DropZone
+                  accept=".csv"
+                  errorOverlayText="File type must be .csv"
+                  type="file"
+                  onDrop={handleDropZoneDrop}
+                  variableHeight
+                >
+                  {fileUpload}
+                  {uploadedFiles}
+                </DropZone>
+                <Checkbox
+                  checked={checked}
+                  label="Overwrite existing inventory"
+                  onChange={handleCheckbox}
+                />
+              </>
+            )}
           </LegacyStack>
         </Modal.Section>
       </Modal>
       {/* </Frame> */}
     </div>
   );
-}
+});
+// Add displayName to the wrapped component
+ImportModal.displayName = "ImportModal";
+export default ImportModal;

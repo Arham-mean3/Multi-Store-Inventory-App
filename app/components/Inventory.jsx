@@ -39,13 +39,15 @@ export default function Inventory({
               alt={variant.product.title}
               size="small"
             />
-            <div className="flex flex-col gap-1 items-center">
+            <div className="flex flex-col gap-1">
               <Text variant="bodyMd" fontWeight="bold" as="span">
                 {variant.product.title}
               </Text>
-              <p className="flex bg-gray-300 text-black text-[10px] w-4 rounded-sm justify-center items-center px-2 py-1">
-                {variant.title}
-              </p>
+              {variant.title === "Default Title" ? null : (
+                <p className="flex bg-gray-300 text-black text-[11px] w-4 rounded-lg justify-center items-center px-3 py-1">
+                  {variant.title}
+                </p>
+              )}
             </div>
           </div>
         </IndexTable.Cell>

@@ -1,7 +1,3 @@
-// import { Fragment, useEffect } from "react";
-// import { useFetcher } from "@remix-run/react";
-// import { Button } from "@shopify/polaris";
-// import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import Heading from "../components/Heading";
 import Inventory from "../components/Inventory";
@@ -10,14 +6,22 @@ import ImportModal from "../components/ImportModal";
 import {
   getAllLocations,
   getInventoryItemsQuery,
+  getStoreUrl,
   updateInventoryQuantitiesQuery,
   updateProductQuery,
   updateProductVariantQuery,
 } from "../lib/queries";
-import { json, useFetcher, useLoaderData } from "@remix-run/react";
+import {
+  json,
+  useFetcher,
+  useLoaderData,
+  useRevalidator,
+} from "@remix-run/react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
 import { customdata } from "../lib/extras";
+import prisma from "../db.server";
+import { useAppBridge } from "@shopify/app-bridge-react";
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -32,8 +36,18 @@ export const loader = async ({ request }) => {
     ${getAllLocations}`,
   );
 
+  const storeUrlResponse = await admin.graphql(`
+    #graphql
+    ${getStoreUrl}`);
+
   const result = await response.json();
   const locationResult = await locationResponse.json();
+  const storeUrl = await storeUrlResponse.json();
+
+  const key = `import_inventory_${storeUrl.data.shop.url}`;
+  const processingState = await prisma.processingState.findUnique({
+    where: { key },
+  });
 
   // Extract the data directly from the response
   const inventoryItems = result?.data?.inventoryItems?.edges;
@@ -43,6 +57,8 @@ export const loader = async ({ request }) => {
   return json({
     data: inventoryItems,
     locations,
+    url: storeUrl.data.shop.url,
+    state: processingState?.isActive || false,
   });
 };
 
@@ -51,12 +67,39 @@ export const action = async ({ request }) => {
   const values = await request.formData();
   const formData = Object.fromEntries(values);
 
-  const { actionKey: key } = formData;
+  const { actionKey: key, url } = formData;
 
   switch (key) {
     case "InventoryUpdate":
       try {
         const { inventoryData } = formData;
+
+        // Check if another import is in progressF
+        // Check if another import is active for the same store
+        const processingState = await prisma.processingState.findUnique({
+          where: { key: `import_inventory_${url}` },
+        });
+
+        if (processingState?.isActive) {
+          return json(
+            {
+              message: `Another import is already in progress for ${url}.`,
+              success: false,
+            },
+            { status: 409 }, // Conflict
+          );
+        }
+
+        // Mark as active for the specific store
+        await prisma.processingState.upsert({
+          where: { key: `import_inventory_${url}` },
+          update: { isActive: true, url: url },
+          create: {
+            key: `import_inventory_${url}`,
+            isActive: true,
+            url: url,
+          },
+        });
 
         const parsedInventoryData = JSON.parse(inventoryData);
 
@@ -119,10 +162,10 @@ export const action = async ({ request }) => {
               variables: {
                 input: {
                   reason: "correction",
-                  name: data.inventoryLevels.quantities[0].name,
+                  name: "available",
                   changes: [
                     {
-                      delta: data.inventoryLevels.quantities[0].quantity,
+                      delta: data.inventoryLevels.quantities.available,
                       inventoryItemId: data.id,
                       locationId: data.inventoryLevels.location.id,
                     },
@@ -138,6 +181,12 @@ export const action = async ({ request }) => {
           console.log("Inventory Quantity Updated Successfully");
         }
 
+        // Mark as inactive after completion
+        await prisma.processingState.update({
+          where: { key: `import_inventory_${url}` },
+          data: { isActive: false },
+        });
+
         console.log("Updated All entries");
 
         return json(
@@ -145,6 +194,10 @@ export const action = async ({ request }) => {
           { status: 201 },
         );
       } catch (error) {
+        await prisma.processingState.update({
+          where: { key: `import_inventory_${url}` },
+          data: { isActive: false },
+        });
         console.log(error);
         return json(
           { message: "Something went wrong!", error: error },
@@ -157,25 +210,39 @@ export const action = async ({ request }) => {
 };
 
 export default function Index() {
+  // GET-DATA-FROM-SERVER-HERE--------------
+  const { data, locations, url } = useLoaderData();
+  const fetcher = useFetcher();
+  const shopify = useAppBridge();
+  const isLoading =
+    ["loading", "submitting"].includes(fetcher.state) &&
+    fetcher.formMethod === "POST";
+  const revalidator = useRevalidator();
+
   // STATE-HANDLING-START-START-HERE
+  const [fetchData, setFetchData] = useState(data);
   const [selected, setSelected] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [custom, setCustom] = useState([]);
+  const [showTimeUser, setShowTimeUser] = useState(0);
+  const [active, setActive] = useState(false);
 
   // STATE-HANDLING-START-END-HERE
   const itemsPerPage = 50;
 
-  // GET-DATA-FROM-SERVER-HERE--------------
-  const { data, locations } = useLoaderData();
-  const fetcher = useFetcher();
-  const { transformedData, setLocations, matchData, setMatchData } =
-    useContext(InventoryContext);
+  const {
+    transformedData,
+    setLocations,
+    matchData,
+    setMatchData,
+    setImportBtn,
+  } = useContext(InventoryContext);
   // Deselection Of Data
 
   // Components Usage and Excel File Usage
   const deselectedInventoryData = useMemo(
     () =>
-      data
+      fetchData
         .filter(({ node }) => node.variant.product.hasOutOfStockVariants)
         .map(({ node }) => ({
           id: node.id,
@@ -195,7 +262,7 @@ export default function Index() {
             ),
           },
         })),
-    [data],
+    [fetchData],
   );
 
   const deselectedLocationData = useMemo(
@@ -224,9 +291,9 @@ export default function Index() {
       .filter((item) => item.inventoryLevels.location.length > 0); // Remove items with no matching inventoryLevels
   }, [selected, data]);
 
-  const inventoryData = filteredInventoryData;
+  let inventoryData = filteredInventoryData;
 
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const totalPages = Math.ceil(fetchData.length / itemsPerPage);
 
   const paginatedOrders = inventoryData.slice(
     currentPage * itemsPerPage,
@@ -251,9 +318,8 @@ export default function Index() {
       const matchingItem = custom.find((customItem) => {
         // Match SKU, variant title, product title, or other relevant fields
         const isMatch =
-          customItem.sku === parsedItem.sku ||
-          (customItem.variant.title === parsedItem.variant.title &&
-            customItem.product.title === parsedItem.variant.product.title);
+          customItem.variant.title === parsedItem.variant.title &&
+          customItem.variant.product.title === parsedItem.variant.product.title;
 
         // Check if the location matches any in inventoryLevels
         const locationMatch = customItem.inventoryLevels.location.some(
@@ -288,7 +354,7 @@ export default function Index() {
             location: matchingItem.inventoryLevels.location.find(
               (loc) => loc.name === parsedItem.location,
             ), // Add the matched location details
-            quantities: matchingItem.inventoryLevels.quantities[0], // Quantities from customdata
+            quantities: parsedItem.quantities, // Quantities from customdata
           },
         };
       }
@@ -298,16 +364,40 @@ export default function Index() {
     })
     .filter((item) => item !== null); // Filter out unmatched records
 
-  console.log("Matched Data", matchedData);
-
+  // Inventory Import Functionality
   const InventoryUpdateHandler = async () => {
     const formData = {
       actionKey: "InventoryUpdate",
       inventoryData: JSON.stringify(matchData),
+      url: url,
     };
+
+    const timeNeeded = matchData.length * 1.6 * 1000; // Convert to milliseconds
+    const timeForUser = matchData.length * 1.6;
+
+    // Calculate time for user (seconds or minutes)
+    let timeDisplay;
+    if (timeForUser <= 60) {
+      console.log(timeForUser, "sec");
+      timeDisplay = `${timeForUser} sec`; // Show time in seconds if it's <= 60 seconds
+    } else {
+      console.log(timeForUser / 60, "min");
+      timeDisplay = `${(timeForUser / 60).toFixed(2)} mins`; // Show time in minutes if it's > 60 seconds
+    }
+
+    setShowTimeUser(timeDisplay); // Set the display time upfront
+
     try {
       console.log("API-CALL", formData);
       await fetcher.submit(formData, { method: "POST" });
+      setImportBtn(false);
+      setActive(true);
+      // Use timeDisplay here rather than relying on showTimeUser
+      setTimeout(() => {
+        setActive(false); // Set active to true after the initial delay
+        revalidator.revalidate();
+        shopify.toast.show(`Updated Inventory in ${timeDisplay}...`); // Show the correct time for use
+      }, timeNeeded); // `timeNeeded` is the delay before activating (in milliseconds)
     } catch (error) {
       console.log("Something Went Wrong!", error);
     }
@@ -315,24 +405,33 @@ export default function Index() {
 
   useEffect(() => {
     console.log("Starting-------------------------------");
-    console.log("Original Data", data);
+    // console.log("Original Data", data);
     const custom = customdata(data);
     setCustom(custom);
   }, []);
-
-  console.log("Custom Data--", custom);
 
   useEffect(() => {
     setLocations(deselectedLocationData);
   }, [deselectedLocationData]);
 
   useEffect(() => {
-    console.log("Match Data Added!");
+    // console.log("Match Data Added!");
     setMatchData(matchedData);
   }, [matchedData.length > 0]);
 
+  useEffect(() => {
+    if (isLoading) {
+      shopify.toast.show("Importing...");
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    console.log("Data------", data);
+    setFetchData(data);
+  }, [data]);
+
   return (
-    <div className="mx-10">
+    <div className="mx-4 lg:mx-10">
       <Heading location={deselectedLocationData} selection={setSelected} />
       <Inventory
         data={inventoryData}
@@ -349,7 +448,11 @@ export default function Index() {
           data={paginatedOrders}
           all={filteredInventoryData}
         />
-        <ImportModal InventoryUpdate={InventoryUpdateHandler} />
+        <ImportModal
+          active={active}
+          InventoryUpdate={InventoryUpdateHandler}
+          timeShown={showTimeUser}
+        />
       </div>
     </div>
   );
