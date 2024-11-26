@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a6f7886077bea7e16b6f1614edcff9e7"
-application_url = "https://robust-comparisons-fx-framework.trycloudflare.com"
+application_url = "https://innovation-grab-silver-isolated.trycloudflare.com"
 embedded = true
 name = "multi-store-inventory-app"
 handle = "multi-store-inventory-app"
@@ -24,9 +24,9 @@ scopes = "read_inventory,read_locations,write_inventory,write_products"
 
 [auth]
 redirect_urls = [
-  "https://robust-comparisons-fx-framework.trycloudflare.com/auth/callback",
-  "https://robust-comparisons-fx-framework.trycloudflare.com/auth/shopify/callback",
-  "https://robust-comparisons-fx-framework.trycloudflare.com/api/auth/callback"
+  "https://innovation-grab-silver-isolated.trycloudflare.com/auth/callback",
+  "https://innovation-grab-silver-isolated.trycloudflare.com/auth/shopify/callback",
+  "https://innovation-grab-silver-isolated.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

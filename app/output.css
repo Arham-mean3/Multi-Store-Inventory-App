@@ -588,16 +588,21 @@ video {
   width: 2.5rem;
 }
 
+.w-28 {
+  width: 7rem;
+}
+
 .w-32 {
   width: 8rem;
 }
 
-.w-4 {
-  width: 1rem;
-}
-
 .w-60 {
   width: 15rem;
+}
+
+.w-fit {
+  width: -moz-fit-content;
+  width: fit-content;
 }
 
 .w-full {
@@ -665,6 +670,11 @@ video {
   line-height: 1.75rem;
 }
 
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
 .font-bold {
   font-weight: 700;
 }
@@ -709,5 +719,10 @@ video {
   .lg\:text-2xl {
     font-size: 1.5rem;
     line-height: 2rem;
+  }
+
+  .lg\:text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
   }
 }

@@ -1,5 +1,5 @@
 import { ActionList, Button, Popover, TextField } from "@shopify/polaris";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 export function Cell({ val, type }) {
   const [popoverActive, setPopoverActive] = useState(false);
@@ -10,7 +10,7 @@ export function Cell({ val, type }) {
 
   const activator = (
     <Button variant="monochromePlain" onClick={togglePopoverActive} disclosure>
-      {val}
+      <p className="text-xs lg:text-sm">{val}</p>
     </Button>
   );
   return (
@@ -24,7 +24,10 @@ export function Cell({ val, type }) {
         <ActionList actionRole="menuitem" items={[{ content: "No Value" }]} />
       )}
       {type === "unAvailable" && (
-        <ActionList actionRole="menuitem" items={[{ content: "Unavailable Value" }]} />
+        <ActionList
+          actionRole="menuitem"
+          items={[{ content: "Unavailable Value" }]}
+        />
       )}
     </Popover>
   );
@@ -33,6 +36,12 @@ export function Cell({ val, type }) {
 export function RightCell({ val, type }) {
   const [popoverActive, setPopoverActive] = useState(false);
   const [value, setValue] = useState(val);
+
+  // Sync state with prop changes
+  useEffect(() => {
+    setValue(val);
+  }, [val]);
+
   const handleChange = useCallback((newValue) => setValue(newValue), []);
   const togglePopoverActive = useCallback(
     () => setPopoverActive((popoverActive) => !popoverActive),
@@ -41,7 +50,7 @@ export function RightCell({ val, type }) {
 
   const activator = (
     <div className="flex w-full">
-      <div className="w-32">
+      <div className="w-28">
         <TextField
           type="number"
           value={value}
@@ -55,10 +64,11 @@ export function RightCell({ val, type }) {
         onClick={togglePopoverActive}
         disclosure
       >
-        {/* {data} */}
+        {/* Button content or icon */}
       </Button>
     </div>
   );
+
   return (
     <Popover
       active={popoverActive}
@@ -70,7 +80,10 @@ export function RightCell({ val, type }) {
         <ActionList actionRole="menuitem" items={[{ content: "values" }]} />
       )}
       {type === "onHand" && (
-        <ActionList actionRole="menuitem" items={[{ content: "On Hand Value" }]} />
+        <ActionList
+          actionRole="menuitem"
+          items={[{ content: "On Hand Value" }]}
+        />
       )}
     </Popover>
   );

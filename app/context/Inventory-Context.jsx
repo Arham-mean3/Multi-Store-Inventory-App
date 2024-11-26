@@ -37,7 +37,6 @@ export default function InventoryContextProvider({ children }) {
   const [checked, setChecked] = useState(false);
   const [file, setFile] = useState([]);
   const [locations, setLocations] = useState([]);
-  console.log("Locations data", locations);
 
   // Export Modal Button State
   const [active, setActive] = useState(false);

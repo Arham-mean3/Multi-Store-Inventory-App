@@ -187,10 +187,21 @@ export const action = async ({ request }) => {
           data: { isActive: false },
         });
 
+        const response = await admin.graphql(
+          `#graphql
+        ${getInventoryItemsQuery}`,
+        );
+
+        const result = await response.json();
+
         console.log("Updated All entries");
 
         return json(
-          { message: "Sucessfully updated inventory!", success: true },
+          {
+            message: "Sucessfully updated inventory!",
+            success: true,
+            data: result?.data?.inventoryItems?.edges,
+          },
           { status: 201 },
         );
       } catch (error) {
@@ -240,30 +251,6 @@ export default function Index() {
   // Deselection Of Data
   // Changes
   // Components Usage and Excel File Usage
-  const deselectedInventoryData = useMemo(
-    () =>
-      fetchData
-        .filter(({ node }) => node.variant.product.hasOutOfStockVariants)
-        .map(({ node }) => ({
-          id: node.id,
-          sku: node.sku,
-          COO: node.countryCodeOfOrigin,
-          hsCode: node.harmonizedSystemCode,
-          variant: node.variant,
-          quantities: node.inventoryLevels.edges.reduce((acc, { node }) => {
-            node.quantities.forEach(({ name, quantity }) => {
-              acc[name] = quantity;
-            });
-            return acc;
-          }, {}),
-          inventoryLevels: {
-            location: node.inventoryLevels.edges.map(
-              ({ node }) => node.location.id,
-            ),
-          },
-        })),
-    [fetchData],
-  );
 
   const deselectedLocationData = useMemo(
     () =>
@@ -273,6 +260,34 @@ export default function Index() {
         address: node.address.formatted,
       })),
     [locations],
+  );
+
+  const deselectedInventoryData = useMemo(
+    () =>
+      fetchData
+        // .filter(({ node }) => node.variant.product.hasOutOfStockVariants)
+        .map(({ node }) => ({
+          id: node.id,
+          sku: node.sku,
+          COO: node.countryCodeOfOrigin,
+          hsCode: node.harmonizedSystemCode,
+          variant: node.variant,
+          quantities: node.inventoryLevels.edges.reduce((acc, { node }) => {
+            // Filter quantities for the selected location
+            if (selected && node.location.id === selected) {
+              node.quantities.forEach(({ name, quantity }) => {
+                acc[name] = quantity;
+              });
+            }
+            return acc;
+          }, {}),
+          inventoryLevels: {
+            location: node.inventoryLevels.edges.map(
+              ({ node }) => node.location.id,
+            ),
+          },
+        })),
+    [fetchData, selected],
   );
 
   const filteredInventoryData = useMemo(() => {
@@ -404,8 +419,6 @@ export default function Index() {
   };
 
   useEffect(() => {
-    console.log("Starting-------------------------------");
-    // console.log("Original Data", data);
     const custom = customdata(data);
     setCustom(custom);
   }, []);
@@ -415,7 +428,6 @@ export default function Index() {
   }, [deselectedLocationData]);
 
   useEffect(() => {
-    // console.log("Match Data Added!");
     setMatchData(matchedData);
   }, [matchedData.length > 0]);
 
@@ -426,9 +438,10 @@ export default function Index() {
   }, [isLoading]);
 
   useEffect(() => {
-    console.log("Data------", data);
     setFetchData(data);
-  }, [data]);
+  }, [data, fetcher.data?.data, fetcher.data?.success]);
+
+  // }, [matchedData]);
 
   return (
     <div className="mx-4 lg:mx-10">
@@ -443,10 +456,9 @@ export default function Index() {
       />
       <div>
         <ExportModal
-          currentLocation={selected}
           locations={deselectedLocationData}
-          data={paginatedOrders}
-          all={filteredInventoryData}
+          currentPageData={paginatedOrders}
+          value={data}
         />
         <ImportModal
           active={active}

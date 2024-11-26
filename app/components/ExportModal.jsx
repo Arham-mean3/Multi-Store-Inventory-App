@@ -1,11 +1,19 @@
 import { Modal, LegacyStack, ChoiceList } from "@shopify/polaris";
 import { useContext } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
+import {
+  currentPageSpecificItemsExport,
+  exportDataForMultipleLocationQuantites,
+  newInventoryStructureData,
+} from "../lib/extras";
 
-export default function ExportModal({ data, all, locations }) {
+export default function ExportModal({
+  currentPageData,
+  locations,
+  value,
+}) {
   const CURRENT_PAGE = "current_page";
   const ALL_VARIANTS = "all_variants";
-  // const SELECTED_CUSTOMERS = "selected_customers";
   const CSV_EXCEL = "csv_excel";
   const CSV_PLAIN = "csv_plain";
 
@@ -18,7 +26,99 @@ export default function ExportModal({ data, all, locations }) {
     selectedExportAs,
   } = useContext(InventoryContext);
 
-  const dataset = selectedExport.includes(CURRENT_PAGE) ? data : all;
+  let dataset = [];
+  let rows;
+
+  if (selectedExport.includes(CURRENT_PAGE)) {
+    const customData = newInventoryStructureData(value);
+    dataset = currentPageSpecificItemsExport(currentPageData, customData);
+
+    rows = dataset.flatMap(({ variant, COO, hsCode, sku, inventoryLevels }) => {
+      return locations.map(({ id: locId, name: locationName }) => {
+        const locationInventory = inventoryLevels.find(
+          (loc) => loc.id === locId,
+        );
+        // Prepare quantities based on location availability
+        const locationQuantities = locationInventory
+          ? {
+              committed: locationInventory.quantities.committed || 0,
+              damaged: locationInventory.quantities.damaged || 0,
+              available: locationInventory.quantities.available || 0,
+              on_hand: locationInventory.quantities.on_hand || 0,
+            }
+          : {
+              committed: "not stocked",
+              damaged: "not stocked",
+              available: "not stocked",
+              on_hand: "not stocked",
+            };
+
+        return [
+          variant.product.handle,
+          variant.product.title,
+          "size",
+          variant.title,
+          "",
+          "",
+          "",
+          "",
+          sku || "",
+          variant.barcode || "",
+          hsCode || "",
+          COO || "",
+          locationName, // Render the location name
+          locationQuantities.committed,
+          locationQuantities.damaged,
+          locationQuantities.available,
+          locationQuantities.on_hand,
+        ];
+      });
+    });
+  }
+  if (selectedExport.includes(ALL_VARIANTS)) {
+    dataset = exportDataForMultipleLocationQuantites(value);
+    rows = dataset.flatMap(({ variant, COO, hsCode, sku, inventoryLevels }) => {
+      return locations.map(({ id: locId, name: locationName }) => {
+        const locationInventory = inventoryLevels.find(
+          (loc) => loc.id === locId,
+        );
+        // Prepare quantities based on location availability
+        const locationQuantities = locationInventory
+          ? {
+              committed: locationInventory.quantities.committed || 0,
+              damaged: locationInventory.quantities.damaged || 0,
+              available: locationInventory.quantities.available || 0,
+              on_hand: locationInventory.quantities.on_hand || 0,
+            }
+          : {
+              committed: "not stocked",
+              damaged: "not stocked",
+              available: "not stocked",
+              on_hand: "not stocked",
+            };
+
+        return [
+          variant.product.handle,
+          variant.product.title,
+          "size",
+          variant.title,
+          "",
+          "",
+          "",
+          "",
+          sku || "",
+          variant.barcode || "",
+          hsCode || "",
+          COO || "",
+          locationName, // Render the location name
+          locationQuantities.committed,
+          locationQuantities.damaged,
+          locationQuantities.available,
+          locationQuantities.on_hand,
+        ];
+      });
+    });
+  }
 
   const exportToCSV = () => {
     // Transform data into CSV format
@@ -41,36 +141,6 @@ export default function ExportModal({ data, all, locations }) {
       "Available",
       "On Hand",
     ];
-
-    console.log(dataset);
-
-    const rows = dataset.flatMap(
-      ({ variant, COO, hsCode, sku, quantities, inventoryLevels }) => {
-        return locations.map(({ id: locId, name: locationName }) => {
-          const isLocationAvailable = inventoryLevels.location.includes(locId);
-
-          return [
-            variant.product.handle,
-            variant.product.title,
-            "size",
-            variant.title,
-            "",
-            "",
-            "",
-            "",
-            sku || "",
-            variant.barcode || "",
-            hsCode || "",
-            COO || "",
-            locationName, // Render the location name
-            isLocationAvailable ? quantities.committed || 0 : "not stocked",
-            isLocationAvailable ? quantities.damaged || 0 : "not stocked",
-            isLocationAvailable ? quantities.available || 0 : "not stocked",
-            isLocationAvailable ? quantities.on_hand || 0 : "not stocked",
-          ];
-        });
-      },
-    );
 
     const csvContent = [headers, ...rows]
       .map(
