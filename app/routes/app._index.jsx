@@ -101,8 +101,10 @@ export const action = async ({ request }) => {
           },
         });
 
+        // Parsing the stringify array
         const parsedInventoryData = JSON.parse(inventoryData);
 
+        // Loop where updating the variant and quantities (Available)
         for (const data of parsedInventoryData) {
           console.log("Get Data from server");
 
@@ -163,11 +165,12 @@ export const action = async ({ request }) => {
                 input: {
                   reason: "correction",
                   name: "available",
-                  changes: [
+                  ignoreCompareQuantity: true,
+                  quantities: [
                     {
-                      delta: data.inventoryLevels.quantities.available,
                       inventoryItemId: data.id,
                       locationId: data.inventoryLevels.location.id,
+                      quantity: data.inventoryLevels.quantities.available,
                     },
                   ],
                 },
@@ -308,7 +311,7 @@ export default function Index() {
 
   let inventoryData = filteredInventoryData;
 
-  const totalPages = Math.ceil(fetchData.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredInventoryData.length / itemsPerPage);
 
   const paginatedOrders = inventoryData.slice(
     currentPage * itemsPerPage,
@@ -394,7 +397,7 @@ export default function Index() {
     let timeDisplay;
     if (timeForUser <= 60) {
       console.log(timeForUser, "sec");
-      timeDisplay = `${timeForUser} sec`; // Show time in seconds if it's <= 60 seconds
+      timeDisplay = `${timeForUser.toFixed(2)} sec`; // Show time in seconds if it's <= 60 seconds
     } else {
       console.log(timeForUser / 60, "min");
       timeDisplay = `${(timeForUser / 60).toFixed(2)} mins`; // Show time in minutes if it's > 60 seconds
@@ -439,13 +442,21 @@ export default function Index() {
 
   useEffect(() => {
     setFetchData(data);
-  }, [data, fetcher.data?.data, fetcher.data?.success]);
+  }, [data]);
 
-  // }, [matchedData]);
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      setFetchData(data);
+    }
+  }, [fetcher.data?.success]);
 
   return (
     <div className="mx-4 lg:mx-10">
-      <Heading location={deselectedLocationData} selection={setSelected} />
+      <Heading
+        location={deselectedLocationData}
+        selection={setSelected}
+        selectedLocation={selected}
+      />
       <Inventory
         data={inventoryData}
         currentPage={currentPage}

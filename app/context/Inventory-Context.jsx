@@ -17,6 +17,7 @@ const INITIAL_STATES = {
   selectedExport: [],
   selectedExportAs: [],
   transformedData: [],
+  popoverActive: false,
   setMatchData: () => {},
   handleImport: () => {},
   handleClose: () => {},
@@ -27,6 +28,8 @@ const INITIAL_STATES = {
   toggleImport: () => {},
   handleDropZoneDrop: () => {},
   setImportBtn: () => {},
+  togglePopoverActive: () => {},
+  setPopoverActive: () => {},
 };
 
 export const InventoryContext = createContext(INITIAL_STATES);
@@ -42,6 +45,7 @@ export default function InventoryContextProvider({ children }) {
   const [active, setActive] = useState(false);
   const [selectedExport, setSelectedExport] = useState(["current_page"]);
   const [selectedExportAs, setSelectedExportAs] = useState(["csv_plain"]);
+  const [popoverActive, setPopoverActive] = useState(false);
 
   // Parsed-Data From Papa-Parser
 
@@ -68,21 +72,6 @@ export default function InventoryContextProvider({ children }) {
 
   const handleCheckbox = useCallback((value) => setChecked(value), []);
 
-  // Export Modal Functionality
-  const handleModalChange = useCallback(() => setActive(!active), [active]);
-
-  const handleClose = () => {
-    handleModalChange();
-  };
-
-  const handleSelectedExport = useCallback((value) => {
-    setSelectedExport(value);
-  }, []);
-
-  const handleSelectedExportAs = useCallback((value) => {
-    setSelectedExportAs(value);
-  }, []);
-
   const handleImport = () => {
     if (file.length > 0) {
       const acceptedFiles = file[0];
@@ -106,6 +95,27 @@ export default function InventoryContextProvider({ children }) {
     [],
   );
 
+  // Export Modal Functionality
+  const handleModalChange = useCallback(() => setActive(!active), [active]);
+
+  const handleClose = () => {
+    handleModalChange();
+  };
+
+  const handleSelectedExport = useCallback((value) => {
+    setSelectedExport(value);
+  }, []);
+
+  const handleSelectedExportAs = useCallback((value) => {
+    setSelectedExportAs(value);
+  }, []);
+
+  const togglePopoverActive = useCallback(
+    () => setPopoverActive((popoverActive) => !popoverActive),
+    [],
+  );
+
+  // Transforming the data that is coming from a CSV
   let transformedData = useMemo(() => {
     if (!parsedData || parsedData.length === 0) return [];
 
@@ -135,7 +145,6 @@ export default function InventoryContextProvider({ children }) {
     }));
   }, [parsedData]);
 
-
   const value = {
     active,
     matchData,
@@ -146,6 +155,9 @@ export default function InventoryContextProvider({ children }) {
     file,
     parsedData,
     transformedData,
+    popoverActive,
+    locations,
+    setPopoverActive,
     setMatchData,
     setLocations,
     setImportBtn,
@@ -157,6 +169,7 @@ export default function InventoryContextProvider({ children }) {
     handleCheckbox,
     toggleImport,
     handleDropZoneDrop,
+    togglePopoverActive,
   };
 
   return (

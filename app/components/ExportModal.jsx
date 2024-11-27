@@ -1,5 +1,12 @@
-import { Modal, LegacyStack, ChoiceList } from "@shopify/polaris";
-import { useContext } from "react";
+import {
+  Modal,
+  LegacyStack,
+  ChoiceList,
+  Popover,
+  Button,
+  Listbox,
+} from "@shopify/polaris";
+import { useContext, useMemo, useState } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
 import {
   currentPageSpecificItemsExport,
@@ -7,24 +14,53 @@ import {
   newInventoryStructureData,
 } from "../lib/extras";
 
-export default function ExportModal({
-  currentPageData,
-  locations,
-  value,
-}) {
+export default function ExportModal({ currentPageData, locations, value }) {
   const CURRENT_PAGE = "current_page";
   const ALL_VARIANTS = "all_variants";
   const CSV_EXCEL = "csv_excel";
   const CSV_PLAIN = "csv_plain";
 
+  const deselectionLocationData = useMemo(
+    () =>
+      locations.map((loc) => ({
+        label: loc.name,
+        value: loc.id,
+      })),
+    [locations],
+  );
+
+  const [locationForExport, setLocationForExport] = useState(
+    deselectionLocationData[0].value,
+  );
+
+  const [locationName, setLocationName] = useState("All-Locations");
+
   const {
     active,
+    popoverActive,
+    setPopoverActive,
     handleClose,
     handleSelectedExport,
     handleSelectedExportAs,
     selectedExport,
     selectedExportAs,
+    togglePopoverActive,
   } = useContext(InventoryContext);
+
+  const handleActiveOptionChange = (_) => {
+    const foundLocation = deselectionLocationData.find(
+      (location) => location.value === _,
+    );
+    if (foundLocation) {
+      setLocationName(foundLocation.label);
+      setLocationForExport(_);
+      setPopoverActive(false);
+    } else {
+      setLocationName("All-Locations");
+      setLocationForExport("All-Locations");
+      setPopoverActive(false);
+    }
+  };
 
   let dataset = [];
   let rows;
@@ -33,8 +69,14 @@ export default function ExportModal({
     const customData = newInventoryStructureData(value);
     dataset = currentPageSpecificItemsExport(currentPageData, customData);
 
+    // if (locationForExport === "All-Locations") {
     rows = dataset.flatMap(({ variant, COO, hsCode, sku, inventoryLevels }) => {
-      return locations.map(({ id: locId, name: locationName }) => {
+      const locationsToMap =
+        locationForExport === "All-Locations"
+          ? locations
+          : locations.filter(({ id }) => id === locationForExport);
+
+      return locationsToMap.map(({ id: locId, name: locationName }) => {
         const locationInventory = inventoryLevels.find(
           (loc) => loc.id === locId,
         );
@@ -74,11 +116,62 @@ export default function ExportModal({
         ];
       });
     });
+    // } else {
+    //   rows = dataset.flatMap(
+    //     ({ variant, COO, hsCode, sku, inventoryLevels }) => {
+    //       const foundLocation = inventoryLevels.find(
+    //         (loc) => loc.id === locationForExport,
+    //       );
+
+    //       console.log("Found Location for ", locationName, foundLocation);
+    //       // Prepare quantities based on location availability
+    //       const locationQuantities = foundLocation
+    //         ? {
+    //             committed: foundLocation.quantities.committed || 0,
+    //             damaged: foundLocation.quantities.damaged || 0,
+    //             available: foundLocation.quantities.available || 0,
+    //             on_hand: foundLocation.quantities.on_hand || 0,
+    //           }
+    //         : {
+    //             committed: "not stocked",
+    //             damaged: "not stocked",
+    //             available: "not stocked",
+    //             on_hand: "not stocked",
+    //           };
+
+    //       return [
+    //         variant.product.handle,
+    //         variant.product.title,
+    //         "size",
+    //         variant.title,
+    //         "",
+    //         "",
+    //         "",
+    //         "",
+    //         sku || "",
+    //         variant.barcode || "",
+    //         hsCode || "",
+    //         COO || "",
+    //         locationName, // Render the location name
+    //         locationQuantities.committed,
+    //         locationQuantities.damaged,
+    //         locationQuantities.available,
+    //         locationQuantities.on_hand,
+    //       ];
+    //     },
+    //   );
+    // }
   }
   if (selectedExport.includes(ALL_VARIANTS)) {
     dataset = exportDataForMultipleLocationQuantites(value);
+
     rows = dataset.flatMap(({ variant, COO, hsCode, sku, inventoryLevels }) => {
-      return locations.map(({ id: locId, name: locationName }) => {
+      const locationsToMap =
+        locationForExport === "All-Locations"
+          ? locations
+          : locations.filter(({ id }) => id === locationForExport);
+
+      return locationsToMap.map(({ id: locId, name: locationName }) => {
         const locationInventory = inventoryLevels.find(
           (loc) => loc.id === locId,
         );
@@ -158,16 +251,23 @@ export default function ExportModal({
     // Create a download link
     const link = document.createElement("a");
     link.href = url;
-    link.download = "inventory.csv"; // Set the filename
+    link.download = "inventory-export.csv"; // Set the filename
     link.click(); // Trigger download
 
     // Clean up the URL object
     URL.revokeObjectURL(url);
+
+    handleClose();
+    setLocationName("All-Locations");
+    setLocationForExport("All-Locations");
   };
+
+  const activator = (
+    <Button onClick={togglePopoverActive}>{locationName}</Button>
+  );
 
   return (
     <div>
-      {/* <Frame> */}
       <Modal
         open={active}
         onClose={handleClose}
@@ -185,6 +285,38 @@ export default function ExportModal({
       >
         <Modal.Section>
           <LegacyStack vertical>
+            <LegacyStack.Item>
+              <div className="flex gap-4 items-center">
+                <h2>Export Inventory From: </h2>
+                <Popover
+                  active={popoverActive}
+                  activator={activator}
+                  autofocusTarget="first-node"
+                  onClose={togglePopoverActive}
+                >
+                  <Popover.Pane>
+                    <Listbox
+                      accessibilityLabel="Basic Listbox example"
+                      onSelect={handleActiveOptionChange}
+                    >
+                      <Listbox.Option value={"All-Locations"}>
+                        All Locations
+                      </Listbox.Option>
+                      {deselectionLocationData.map((data, index) => {
+                        return (
+                          <div key={index}>
+                            <Listbox.Option value={data.value}>
+                              {data.label}
+                            </Listbox.Option>
+                          </div>
+                        );
+                      })}
+                    </Listbox>
+                  </Popover.Pane>
+                </Popover>
+                {/* <InventoryPopover /> */}
+              </div>
+            </LegacyStack.Item>
             <LegacyStack.Item>
               <ChoiceList
                 title="Export"
@@ -214,7 +346,6 @@ export default function ExportModal({
           </LegacyStack>
         </Modal.Section>
       </Modal>
-      {/* </Frame> */}
     </div>
   );
 }

@@ -109,9 +109,11 @@ mutation productVariantsBulkUpdate($productId: ID!, $variants: [ProductVariantsB
 `;
 
 export const updateInventoryQuantitiesQuery = `
-mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
-  inventoryAdjustQuantities(input: $input) {
+mutation InventorySet($input: InventorySetQuantitiesInput!) {
+  inventorySetQuantities(input: $input) {
     inventoryAdjustmentGroup {
+      reason
+      referenceDocumentUri
       changes {
         name
         delta
