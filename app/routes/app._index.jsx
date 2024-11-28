@@ -22,6 +22,11 @@ import { InventoryContext } from "../context/Inventory-Context";
 import { customdata } from "../lib/extras";
 import prisma from "../db.server";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { Resend } from "resend";
+import { render } from "@react-email/components";
+import ImportEmailLayout from "../email/Import-Email-Layout";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -63,17 +68,20 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const values = await request.formData();
   const formData = Object.fromEntries(values);
 
   const { actionKey: key, url } = formData;
 
+  console.log("Session Email----", session.id, session.onlineAccessInfo);
+
   switch (key) {
     case "InventoryUpdate":
       try {
         const { inventoryData } = formData;
-
+        const uniqueLocationIds = new Set();
+        let errors = [];
         // Check if another import is in progressF
         // Check if another import is active for the same store
         const processingState = await prisma.processingState.findUnique({
@@ -105,85 +113,218 @@ export const action = async ({ request }) => {
         const parsedInventoryData = JSON.parse(inventoryData);
 
         // Loop where updating the variant and quantities (Available)
-        for (const data of parsedInventoryData) {
-          console.log("Get Data from server");
+        // for (const data of parsedInventoryData) {
+        //   console.log("Get Data from server");
 
-          // Update Product Title and Handle
-          const updateProductResponse = await admin.graphql(
-            `#graphql
+        //   // Update Product Title and Handle
+        //   const updateProductResponse = await admin.graphql(
+        //     `#graphql
+        //     ${updateProductQuery}
+        //   `,
+        //     {
+        //       variables: {
+        //         input: {
+        //           id: data.product.id,
+        //           handle: data.product.handle,
+        //           title: data.product.title,
+        //         },
+        //       },
+        //     },
+        //   );
+
+        //   const updateProduct = await updateProductResponse.json();
+        //   console.log("Product Title and Handle Updated");
+
+        //   // Update Product variants
+
+        //   const updateProductVariantsResponse = await admin.graphql(
+        //     `#graphql
+        //        ${updateProductVariantQuery}
+        //       `,
+        //     {
+        //       variables: {
+        //         productId: data.product.id,
+        //         variants: [
+        //           {
+        //             id: data.product.variant.id,
+        //             barcode: data.product.variant.barcode,
+        //             inventoryItem: {
+        //               countryCodeOfOrigin: data.product.variant.COO,
+        //               harmonizedSystemCode: data.product.variant.hsCode,
+        //               sku: data.product.variant.inventoryItems.sku,
+        //             },
+        //           },
+        //         ],
+        //       },
+        //     },
+        //   );
+
+        //   const variantUpdated = await updateProductVariantsResponse.json();
+
+        //   console.log("Product Variant Update Successfully");
+        //   // Update Inventory Levels quantity
+
+        //   const updateInventoryQuantitesResponse = await admin.graphql(
+        //     `#graphql
+        //       ${updateInventoryQuantitiesQuery}
+        //       `,
+        //     {
+        //       variables: {
+        //         input: {
+        //           reason: "correction",
+        //           name: "available",
+        //           ignoreCompareQuantity: true,
+        //           quantities: [
+        //             {
+        //               inventoryItemId: data.id,
+        //               locationId: data.inventoryLevels.location.id,
+        //               quantity: data.inventoryLevels.quantities.available,
+        //             },
+        //           ],
+        //         },
+        //       },
+        //     },
+        //   );
+
+        //   const inventoryQuantites =
+        //     await updateInventoryQuantitesResponse.json();
+
+        //   console.log("Inventory Quantity Updated Successfully");
+
+        //   const locationId = data.inventoryLevels?.location?.id;
+
+        //   // Add the location ID to the Set only if it exists
+        //   if (locationId && !uniqueLocationIds.has(locationId)) {
+        //     uniqueLocationIds.add(locationId); // This ensures no duplicates are added
+        //   }
+        // }
+
+        // Main loop for processing inventory data
+        for (const data of parsedInventoryData) {
+          try {
+            console.log("Get Data from server");
+
+            // Update Product Title and Handle
+            try {
+              const updateProductResponse = await admin.graphql(
+                `#graphql
             ${updateProductQuery}
           `,
-            {
-              variables: {
-                input: {
-                  id: data.product.id,
-                  handle: data.product.handle,
-                  title: data.product.title,
-                },
-              },
-            },
-          );
-
-          const updateProduct = await updateProductResponse.json();
-          console.log("Product Title and Handle Updated");
-
-          // Update Product variants
-
-          const updateProductVariantsResponse = await admin.graphql(
-            `#graphql
-               ${updateProductVariantQuery}
-              `,
-            {
-              variables: {
-                productId: data.product.id,
-                variants: [
-                  {
-                    id: data.product.variant.id,
-                    barcode: data.product.variant.barcode,
-                    inventoryItem: {
-                      countryCodeOfOrigin: data.product.variant.COO,
-                      harmonizedSystemCode: data.product.variant.hsCode,
-                      sku: data.product.variant.inventoryItems.sku,
+                {
+                  variables: {
+                    input: {
+                      id: data.product.id,
+                      handle: data.product.handle,
+                      title: data.product.title,
                     },
                   },
-                ],
-              },
-            },
-          );
+                },
+              );
+              const updateProduct = await updateProductResponse.json();
+              console.log("Product Title and Handle Updated");
+            } catch (productError) {
+              errors.push({
+                type: "Product Update Error",
+                productId: data.product.id,
+                message: productError.message,
+              });
+            }
 
-          const variantUpdated = await updateProductVariantsResponse.json();
+            // Update Product Variants
+            try {
+              const updateProductVariantsResponse = await admin.graphql(
+                `#graphql
+              ${updateProductVariantQuery}
+              `,
+                {
+                  variables: {
+                    productId: data.product.id,
+                    variants: [
+                      {
+                        id: data.product.variant.id,
+                        barcode: data.product.variant.barcode,
+                        inventoryItem: {
+                          countryCodeOfOrigin: data.product.variant.COO,
+                          harmonizedSystemCode: data.product.variant.hsCode,
+                          sku: data.product.variant.inventoryItems.sku,
+                        },
+                      },
+                    ],
+                  },
+                },
+              );
 
-          console.log("Product Variant Update Successfully");
-          // Update Inventory Levels quantity
+              const variantUpdated = await updateProductVariantsResponse.json();
+              console.log("Product Variant Update Successfully");
+            } catch (variantError) {
+              errors.push({
+                type: "Variant Update Error",
+                productId: data.product.id,
+                variantId: data.product.variant.id,
+                message: variantError.message,
+              });
+            }
 
-          const updateInventoryQuantitesResponse = await admin.graphql(
-            `#graphql
+            // Update Inventory Levels
+            try {
+              const updateInventoryQuantitesResponse = await admin.graphql(
+                `#graphql
               ${updateInventoryQuantitiesQuery}
               `,
-            {
-              variables: {
-                input: {
-                  reason: "correction",
-                  name: "available",
-                  ignoreCompareQuantity: true,
-                  quantities: [
-                    {
-                      inventoryItemId: data.id,
-                      locationId: data.inventoryLevels.location.id,
-                      quantity: data.inventoryLevels.quantities.available,
+                {
+                  variables: {
+                    input: {
+                      reason: "correction",
+                      name: "available",
+                      ignoreCompareQuantity: true,
+                      quantities: [
+                        {
+                          inventoryItemId: data.id,
+                          locationId: data.inventoryLevels.location.id,
+                          quantity: data.inventoryLevels.quantities.available,
+                        },
+                      ],
                     },
-                  ],
+                  },
                 },
-              },
-            },
-          );
+              );
 
-          const inventoryQuantites =
-            await updateInventoryQuantitesResponse.json();
+              const inventoryQuantites =
+                await updateInventoryQuantitesResponse.json();
+              console.log("Inventory Quantity Updated Successfully");
 
-          console.log("Inventory Quantity Updated Successfully");
+              // Track unique location IDs
+              const locationId = data.inventoryLevels?.location?.id;
+              if (locationId && !uniqueLocationIds.has(locationId)) {
+                uniqueLocationIds.add(locationId);
+              }
+            } catch (inventoryError) {
+              errors.push({
+                type: "Inventory Update Error",
+                inventoryItemId: data.id,
+                locationId: data.inventoryLevels.location.id,
+                message: inventoryError.message,
+              });
+            }
+          } catch (itemError) {
+            errors.push({
+              type: "Unknown Error",
+              data,
+              message: itemError.message,
+            });
+          }
         }
 
+        // Get the number of unique locations
+        const locationCount = uniqueLocationIds.size;
+
+        const importHTMLTemplate = render(
+          <ImportEmailLayout
+            length={parsedInventoryData.length}
+            size={locationCount}
+            errors={errors}
+          />,
+        );
         // Mark as inactive after completion
         await prisma.processingState.update({
           where: { key: `import_inventory_${url}` },
@@ -197,7 +338,26 @@ export const action = async ({ request }) => {
 
         const result = await response.json();
 
-        console.log("Updated All entries");
+        const resolvedHTMLTemplate = await importHTMLTemplate;
+
+        const { data, error } = await resend.emails.send({
+          from: `${url} <onboarding@resend.dev>`,
+          to: ["arham.khan@mean3.com"],
+          subject: "Importing CSV File Testing!",
+          html: resolvedHTMLTemplate,
+        });
+
+        if (error) {
+          console.log("Error while sending an email", error);
+          return json({
+            message: "Error while sending an email",
+            _error: error,
+          });
+        }
+
+        if (data) {
+          console.log("Successfully email", data);
+        }
 
         return json(
           {

@@ -305,7 +305,10 @@ export default function ExportModal({ currentPageData, locations, value }) {
                       {deselectionLocationData.map((data, index) => {
                         return (
                           <div key={index}>
-                            <Listbox.Option value={data.value}>
+                            <Listbox.Option
+                              value={data.value}
+                              // selected={selected}
+                            >
                               {data.label}
                             </Listbox.Option>
                           </div>

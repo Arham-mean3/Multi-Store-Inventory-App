@@ -69,10 +69,10 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
   }, [matchData.length > 0]);
 
   return (
-    <div className="w-10 h-32 lg:h-80">
+    <div className="w-10 h-32 lg:h-80 lg:w-40">
       {/* <Frame> */}
       <Modal
-        size="small"
+        size="large"
         open={importBtn}
         onClose={toggleImport}
         title="Import inventory by CSV"
@@ -116,11 +116,11 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
                   {fileUpload}
                   {uploadedFiles}
                 </DropZone>
-                <Checkbox
+                {/* <Checkbox
                   checked={checked}
                   label="Overwrite existing inventory"
                   onChange={handleCheckbox}
-                />
+                /> */}
               </>
             )}
           </LegacyStack>
