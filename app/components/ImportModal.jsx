@@ -1,5 +1,5 @@
 import {
-  Checkbox,
+  Banner,
   DropZone,
   LegacyStack,
   Modal,
@@ -13,12 +13,11 @@ import { NoteIcon } from "@shopify/polaris-icons";
 const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
   const {
     file,
-    checked,
     matchData,
     importBtn,
+    columnMissing,
     handleImport,
     toggleImport,
-    handleCheckbox,
     handleDropZoneDrop,
   } = useContext(InventoryContext);
 
@@ -91,7 +90,7 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
       >
         <Modal.Section>
           <LegacyStack vertical>
-            <div className="">
+            <div>
               <h3>
                 {active ? (
                   <strong>
@@ -105,7 +104,20 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
             </div>
 
             {!active && (
-              <>
+              <div className="flex flex-col gap-4">
+                {Array.isArray(columnMissing) && columnMissing.length > 0 ? (
+                  <Banner title="Missing Compulsory Columns" tone="critical">
+                    <p>The following columns are missing from your CSV:</p>
+                    <div className="flex gap-4 items-center">
+                      {columnMissing.map((missing, index) => (
+                        <p key={index}>{missing}</p>
+                      ))}
+                    </div>
+                  </Banner>
+                ) : (
+                  <p>No missing columns detected</p>
+                )}
+
                 <DropZone
                   accept=".csv"
                   errorOverlayText="File type must be .csv"
@@ -121,7 +133,7 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
                   label="Overwrite existing inventory"
                   onChange={handleCheckbox}
                 /> */}
-              </>
+              </div>
             )}
           </LegacyStack>
         </Modal.Section>

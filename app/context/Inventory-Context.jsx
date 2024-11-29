@@ -12,6 +12,7 @@ const INITIAL_STATES = {
   parsedData: [],
   active: true,
   importBtn: false,
+  columnMissing: [],
   matchData: [],
   setActive: () => {},
   selectedExport: [],
@@ -47,6 +48,22 @@ export default function InventoryContextProvider({ children }) {
   const [selectedExportAs, setSelectedExportAs] = useState(["csv_plain"]);
   const [popoverActive, setPopoverActive] = useState(false);
 
+  // Missing Column States
+  const [columnMissing, setColumnMissing] = useState([]);
+
+  const compulsoryColumns = [
+    "Handle",
+    "Title",
+    "Barcode",
+    "HS Code",
+    "COO",
+    "Location",
+    "Committed",
+    "Damaged",
+    "Available",
+    "On Hand",
+  ];
+
   // Parsed-Data From Papa-Parser
 
   const [parsedData, setParsedData] = useState([]);
@@ -81,6 +98,20 @@ export default function InventoryContextProvider({ children }) {
         complete: (results) => {
           console.log("Parsed Data:", results.data);
           setParsedData(results.data); // Save parsed data to context/state
+
+          // Validate columns
+          const parsedColumns = results.meta.fields; // Extract parsed column names
+          // console.log("Parsed Columns", parsedColumns);
+          const missingColumns = compulsoryColumns.filter(
+            (column) => !parsedColumns.includes(column),
+          );
+
+          if (missingColumns.length > 0) {
+            console.error("Missing Columns:", missingColumns);
+            setColumnMissing(missingColumns.join(", ")); // Save missing columns as a comma-separated string
+          } else {
+            setColumnMissing(""); // Clear missing column state if none are missing
+          }
         },
         error: (error) => {
           console.error("Error parsing CSV:", error);
@@ -157,6 +188,7 @@ export default function InventoryContextProvider({ children }) {
     transformedData,
     popoverActive,
     locations,
+    columnMissing,
     setPopoverActive,
     setMatchData,
     setLocations,

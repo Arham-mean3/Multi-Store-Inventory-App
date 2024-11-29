@@ -131,6 +131,7 @@ export const getStoreUrl = `
 query ShopMetafield {
   shop{
     url
+    name
   }
 }
 `;
