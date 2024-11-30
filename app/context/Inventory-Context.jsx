@@ -19,6 +19,7 @@ const INITIAL_STATES = {
   selectedExportAs: [],
   transformedData: [],
   popoverActive: false,
+  loading: false,
   setMatchData: () => {},
   handleImport: () => {},
   handleClose: () => {},
@@ -31,6 +32,7 @@ const INITIAL_STATES = {
   setImportBtn: () => {},
   togglePopoverActive: () => {},
   setPopoverActive: () => {},
+  setLoading: () => {},
 };
 
 export const InventoryContext = createContext(INITIAL_STATES);
@@ -41,7 +43,7 @@ export default function InventoryContextProvider({ children }) {
   const [checked, setChecked] = useState(false);
   const [file, setFile] = useState([]);
   const [locations, setLocations] = useState([]);
-
+  const [loading, setLoading] = useState(false);
   // Export Modal Button State
   const [active, setActive] = useState(false);
   const [selectedExport, setSelectedExport] = useState(["current_page"]);
@@ -58,10 +60,7 @@ export default function InventoryContextProvider({ children }) {
     "HS Code",
     "COO",
     "Location",
-    "Committed",
-    "Damaged",
     "Available",
-    "On Hand",
   ];
 
   // Parsed-Data From Papa-Parser
@@ -85,12 +84,91 @@ export default function InventoryContextProvider({ children }) {
     if (!importBtn) setFile([]);
     setMatchData([]);
     setParsedData([]);
+    setColumnMissing([]); // Clear missing column state when the model is closed!
   }, []);
 
   const handleCheckbox = useCallback((value) => setChecked(value), []);
 
+  // const handleImport = () => {
+  //   if (file.length > 0) {
+  //     const acceptedFiles = file[0];
+  //     Papa.parse(acceptedFiles, {
+  //       header: true,
+  //       skipEmptyLines: true,
+  //       complete: (results) => {
+  //         console.log("Parsed Data:", results.data);
+  //         setParsedData(results.data); // Save parsed data to context/state
+
+  //   // Validate columns
+  //   const parsedColumns = results.meta.fields; // Extract parsed column names
+  //   // console.log("Parsed Columns", parsedColumns);
+  //   const missingColumns = compulsoryColumns.filter(
+  //     (column) => !parsedColumns.includes(column),
+  //   );
+
+  //   if (missingColumns.length > 0) {
+  //     console.error("Missing Columns:", missingColumns);
+  //     setColumnMissing((col) => {
+  //       const uniqueMissing = [...new Set([...col, ...missingColumns])]; // Combine and deduplicate
+  //       return uniqueMissing;
+  //     });
+  //   } else {
+  //     setColumnMissing([]); // Clear missing column state if none are missing
+  //   }
+  // },
+  //       error: (error) => {
+  //         console.error("Error parsing CSV:", error);
+  //       },
+  //     });
+  //   }
+  // };
+
+  // const handleImport = () => {
+  //   if (file.length > 0) {
+  //     setLoading(true); // Start loading immediately
+  //     const acceptedFiles = file[0];
+  //     Papa.parse(acceptedFiles, {
+  //       header: true,
+  //       skipEmptyLines: true,
+  //       complete: (results) => {
+  //         console.log("Parsed Data:", results.data);
+  //         setParsedData(results.data); // Save parsed data to context/state
+
+  //         // Validate columns
+  //         const parsedColumns = results.meta.fields; // Extract parsed column names
+  //         // console.log("Parsed Columns", parsedColumns);
+  //         const missingColumns = compulsoryColumns.filter(
+  //           (column) => !parsedColumns.includes(column),
+  //         );
+
+  //         if (missingColumns.length > 0) {
+  //           console.error("Missing Columns:", missingColumns);
+  //           setColumnMissing((col) => {
+  //             const uniqueMissing = [...new Set([...col, ...missingColumns])]; // Combine and deduplicate
+  //             return uniqueMissing;
+  //           });
+  //         } else {
+  //           setColumnMissing([]); // Clear missing column state if none are missing
+  //         }
+
+  //         // Stop loading after a delay
+  //         setTimeout(() => {
+  //           setLoading(false);
+  //         }, 1000); // Ensure loading animation completes
+  //       },
+  //       error: (error) => {
+  //         console.error("Error parsing CSV:", error);
+  //         setLoading(false); // Stop loading immediately on error
+  //       },
+  //     });
+  //   }
+  // };
+
   const handleImport = () => {
     if (file.length > 0) {
+      setLoading(true); // Start loading
+      setColumnMissing([]); // Clear errors from previous runs
+
       const acceptedFiles = file[0];
       Papa.parse(acceptedFiles, {
         header: true,
@@ -100,29 +178,39 @@ export default function InventoryContextProvider({ children }) {
           setParsedData(results.data); // Save parsed data to context/state
 
           // Validate columns
-          const parsedColumns = results.meta.fields; // Extract parsed column names
-          // console.log("Parsed Columns", parsedColumns);
+          const parsedColumns = results.meta.fields;
           const missingColumns = compulsoryColumns.filter(
             (column) => !parsedColumns.includes(column),
           );
 
           if (missingColumns.length > 0) {
             console.error("Missing Columns:", missingColumns);
-            setColumnMissing(missingColumns.join(", ")); // Save missing columns as a comma-separated string
+            setColumnMissing([...new Set(missingColumns)]); // Set new errors
           } else {
-            setColumnMissing(""); // Clear missing column state if none are missing
+            setColumnMissing([]); // Clear errors if none are missing
           }
+
+          setTimeout(() => {
+            setLoading(false); // End loading after 1 second
+          }, 1000);
         },
         error: (error) => {
           console.error("Error parsing CSV:", error);
+          setLoading(false); // Stop loading immediately on error
         },
       });
     }
   };
 
   const handleDropZoneDrop = useCallback(
-    (_dropFiles, acceptedFiles, _rejectedFiles) =>
-      setFile((files) => [...files, ...acceptedFiles]),
+    (_dropFiles, acceptedFiles, _rejectedFiles) => {
+      // Replace the current file with the new one
+      const newFile = acceptedFiles.slice(0, 1);
+      setFile(newFile); // Replace the old file with the new file
+      setColumnMissing([]); // Clear previous column errors
+      setMatchData([]); // Clear matched data from the previous file
+      setLoading(false); // Reset loading state
+    },
     [],
   );
 
@@ -165,13 +253,31 @@ export default function InventoryContextProvider({ children }) {
       },
       quantities: {
         available:
-          row["Available"] === "not stocked" ? 0 : parseFloat(row["Available"]),
+          row["Available"] === "not stocked"
+            ? 0
+            : row["Available"] === ""
+              ? null // Explicitly set to null for empty string
+              : isNaN(parseFloat(row["Available"])) // Check if parsing results in NaN
+                ? null // Set to null if parsing fails
+                : parseFloat(row["Available"]),
         committed:
-          row["Committed"] === "not stocked" ? 0 : parseFloat(row["Committed"]),
+          row["Committed"] === "not stocked"
+            ? 0
+            : isNaN(parseFloat(row["Committed"]))
+              ? null
+              : parseFloat(row["Committed"]),
         damaged:
-          row["Damaged"] === "not stocked" ? 0 : parseFloat(row["Damaged"]),
+          row["Damaged"] === "not stocked"
+            ? 0
+            : isNaN(parseFloat(row["Damaged"]))
+              ? null
+              : parseFloat(row["Damaged"]),
         on_hand:
-          row["On Hand"] === "not stocked" ? 0 : parseFloat(row["On Hand"]),
+          row["On Hand"] === "not stocked"
+            ? 0
+            : isNaN(parseFloat(row["On Hand"]))
+              ? null
+              : parseFloat(row["On Hand"]),
       },
     }));
   }, [parsedData]);
@@ -189,6 +295,8 @@ export default function InventoryContextProvider({ children }) {
     popoverActive,
     locations,
     columnMissing,
+    loading,
+    setLoading,
     setPopoverActive,
     setMatchData,
     setLocations,

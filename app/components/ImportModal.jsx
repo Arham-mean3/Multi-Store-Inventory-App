@@ -16,12 +16,11 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
     matchData,
     importBtn,
     columnMissing,
+    loading,
     handleImport,
     toggleImport,
     handleDropZoneDrop,
   } = useContext(InventoryContext);
-
-  const [loading, setLoading] = useState(false);
 
   const validImageTypes = ["image/gif", "image/jpeg", "image/png"];
 
@@ -43,7 +42,7 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
             }
           />
           <div>
-            {file.name}{" "}
+            {file.name}
             <Text variant="bodySm" as="p">
               {file.size} bytes
             </Text>
@@ -53,23 +52,18 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
     </LegacyStack>
   );
 
-  const text = matchData.length === 0 ? "Import Inventory" : "Update Inventory";
-  const actionFunc = matchData.length === 0 ? handleImport : InventoryUpdate;
+  const text =
+    !loading && matchData.length === 0 ? "Import Inventory" : "Start Import";
+  const actionFunc =
+    !loading && matchData.length === 0 ? handleImport : InventoryUpdate;
 
-  useEffect(() => {
-    if (matchData.length > 0) {
-      setLoading(true);
-      const timeout = setTimeout(() => {
-        setLoading(false);
-      }, 1000); // 1-second delay
-
-      return () => clearTimeout(timeout); // Clean up the timeout
-    }
-  }, [matchData.length > 0]);
+  const isMissingRequiredColumns =
+    columnMissing.length > 0 &&
+    columnMissing.includes("title") &&
+    columnMissing.includes("handle");
 
   return (
     <div className="w-10 h-32 lg:h-80 lg:w-40">
-      {/* <Frame> */}
       <Modal
         size="large"
         open={importBtn}
@@ -78,7 +72,7 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
         primaryAction={{
           content: text,
           onAction: actionFunc,
-          disabled: file.length === 0,
+          disabled: file.length === 0 || isMissingRequiredColumns, // Disable if no file or missing required columns
         }}
         secondaryActions={[
           {
@@ -98,24 +92,29 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
                     completed. It will take {timeShown}.
                   </strong>
                 ) : (
-                  "This CSV file updates your Available or On hand inventory quantities."
+                  <span>
+                    This CSV file updates your <strong>Available</strong>{" "}
+                    inventory quantities.
+                  </span>
                 )}
               </h3>
             </div>
 
             {!active && (
               <div className="flex flex-col gap-4">
-                {Array.isArray(columnMissing) && columnMissing.length > 0 ? (
+                {!loading && columnMissing.length > 0 && (
                   <Banner title="Missing Compulsory Columns" tone="critical">
-                    <p>The following columns are missing from your CSV:</p>
+                    <p className="mt-2">
+                      The following columns are missing from your CSV:
+                    </p>
                     <div className="flex gap-4 items-center">
                       {columnMissing.map((missing, index) => (
-                        <p key={index}>{missing}</p>
+                        <ol key={index} className="font-bold text-lg my-2">
+                          <li>{missing}</li>
+                        </ol>
                       ))}
                     </div>
                   </Banner>
-                ) : (
-                  <p>No missing columns detected</p>
                 )}
 
                 <DropZone
@@ -124,24 +123,20 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
                   type="file"
                   onDrop={handleDropZoneDrop}
                   variableHeight
+                  allowMultiple={false}
                 >
                   {fileUpload}
                   {uploadedFiles}
                 </DropZone>
-                {/* <Checkbox
-                  checked={checked}
-                  label="Overwrite existing inventory"
-                  onChange={handleCheckbox}
-                /> */}
               </div>
             )}
           </LegacyStack>
         </Modal.Section>
       </Modal>
-      {/* </Frame> */}
     </div>
   );
 });
+
 // Add displayName to the wrapped component
 ImportModal.displayName = "ImportModal";
 export default ImportModal;

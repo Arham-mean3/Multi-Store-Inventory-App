@@ -81,9 +81,11 @@ export const action = async ({ request }) => {
   switch (key) {
     case "InventoryUpdate":
       try {
-        const { inventoryData } = formData;
+        const { inventoryData, missing } = formData;
         const uniqueLocationIds = new Set();
         let errors = [];
+        const missingColumns = JSON.parse(missing);
+        console.log("Any Missing Column", missingColumns);
         // Check if another import is in progressF
         // Check if another import is active for the same store
         const processingState = await prisma.processingState.findUnique({
@@ -348,6 +350,7 @@ export const action = async ({ request }) => {
             length={parsedInventoryData.length}
             size={locationCount}
             errors={errors}
+            missing={missingColumns}
           />,
         );
         // Mark as inactive after completion
@@ -410,7 +413,7 @@ export const action = async ({ request }) => {
 
 export default function Index() {
   // GET-DATA-FROM-SERVER-HERE--------------
-  const { data, locations, url, name, state, processingData } = useLoaderData();
+  const { data, locations, url, name } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
   const isLoading =
@@ -434,6 +437,7 @@ export default function Index() {
     transformedData,
     setLocations,
     matchData,
+    columnMissing,
     setMatchData,
     setImportBtn,
   } = useContext(InventoryContext);
@@ -575,6 +579,7 @@ export default function Index() {
       inventoryData: JSON.stringify(matchData),
       name: name,
       url: url,
+      missing: JSON.stringify(columnMissing),
     };
 
     const timeNeeded = matchData.length * 1.6 * 1000; // Convert to milliseconds
@@ -619,6 +624,7 @@ export default function Index() {
   }, [deselectedLocationData]);
 
   useEffect(() => {
+    // console.log("Matched Data", matchedData)
     setMatchData(matchedData);
   }, [matchedData.length > 0]);
 
@@ -693,3 +699,5 @@ export default function Index() {
     </div>
   );
 }
+
+//  <ImportEmailLayout length={2} size={1} errors={[]} missing={["Available", "Title"]}/>

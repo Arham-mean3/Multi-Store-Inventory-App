@@ -1,6 +1,7 @@
 import { Container, Img, Row, Text } from "@react-email/components";
 
-export default function ImportEmailLayout({ length, size, errors }) {
+export default function ImportEmailLayout({ length, size, errors, missing }) {
+  const comma = missing.length > 1 && "'s";
   return (
     <Container style={{ marginTop: 20, padding: 0 }}>
       <div
@@ -59,6 +60,46 @@ export default function ImportEmailLayout({ length, size, errors }) {
           </Text>
         </Row>
 
+        {/* Any Missing Columns */}
+        {missing && missing.length < 0 ? null : (
+          <Row>
+            <Text
+              style={{
+                fontSize: 14,
+                lineHeight: "24px",
+                fontWeight: "bold",
+                margin: 0,
+                padding: 12,
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              Missing Column{comma}:{" "}
+              {missing.map((name, index) => (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                  key={index}
+                >
+                  <span
+                    style={{
+                      color: "#007bff",
+                      fontWeight: "normal",
+                      marginLeft: 5,
+                    }}
+                  >
+                    {index + 1}: {name}
+                  </span>
+                </div>
+              ))}
+            </Text>
+          </Row>
+        )}
+
+        {/* Update on Locations */}
         {errors && errors.length > 0 ? null : (
           <Row>
             <Text
@@ -101,7 +142,6 @@ export default function ImportEmailLayout({ length, size, errors }) {
                 paddingRight: 12,
                 paddingLeft: 12,
                 paddingTop: 8,
-                paddingBottom: 8,
                 display: "flex",
                 flexDirection: "column",
               }}
