@@ -17,6 +17,10 @@ query inventoryItems {
             id
             title
             handle
+            options{
+              name
+              values
+            }
             hasOutOfStockVariants
             featuredMedia{
               preview{

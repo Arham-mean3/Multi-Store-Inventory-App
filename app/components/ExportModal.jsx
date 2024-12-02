@@ -68,149 +68,106 @@ export default function ExportModal({ currentPageData, locations, value }) {
   if (selectedExport.includes(CURRENT_PAGE)) {
     const customData = newInventoryStructureData(value);
     dataset = currentPageSpecificItemsExport(currentPageData, customData);
-
     // if (locationForExport === "All-Locations") {
-    rows = dataset.flatMap(({ variant, COO, hsCode, sku, inventoryLevels }) => {
-      const locationsToMap =
-        locationForExport === "All-Locations"
-          ? locations
-          : locations.filter(({ id }) => id === locationForExport);
+    rows = dataset.flatMap(
+      ({ variant, COO, hsCode, sku, inventoryLevels, options }) => {
+        const locationsToMap =
+          locationForExport === "All-Locations"
+            ? locations
+            : locations.filter(({ id }) => id === locationForExport);
 
-      return locationsToMap.map(({ id: locId, name: locationName }) => {
-        const locationInventory = inventoryLevels.find(
-          (loc) => loc.id === locId,
-        );
-        // Prepare quantities based on location availability
-        const locationQuantities = locationInventory
-          ? {
-              committed: locationInventory.quantities.committed || 0,
-              damaged: locationInventory.quantities.damaged || 0,
-              available: locationInventory.quantities.available || 0,
-              on_hand: locationInventory.quantities.on_hand || 0,
-            }
-          : {
-              committed: "not stocked",
-              damaged: "not stocked",
-              available: "not stocked",
-              on_hand: "not stocked",
-            };
+        return locationsToMap.map(({ id: locId, name: locationName }) => {
+          const locationInventory = inventoryLevels.find(
+            (loc) => loc.id === locId,
+          );
+          // Prepare quantities based on location availability
+          const locationQuantities = locationInventory
+            ? {
+                committed: locationInventory.quantities.committed || 0,
+                damaged: locationInventory.quantities.damaged || 0,
+                available: locationInventory.quantities.available || 0,
+                on_hand: locationInventory.quantities.on_hand || 0,
+              }
+            : {
+                committed: "not stocked",
+                damaged: "not stocked",
+                available: "not stocked",
+                on_hand: "not stocked",
+              };
 
-        return [
-          variant.product.handle,
-          variant.product.title,
-          "size",
-          variant.title,
-          "",
-          "",
-          "",
-          "",
-          sku || "",
-          variant.barcode || "",
-          hsCode || "",
-          COO || "",
-          locationName, // Render the location name
-          locationQuantities.committed,
-          locationQuantities.damaged,
-          locationQuantities.available,
-          locationQuantities.on_hand,
-        ];
-      });
-    });
-    // } else {
-    //   rows = dataset.flatMap(
-    //     ({ variant, COO, hsCode, sku, inventoryLevels }) => {
-    //       const foundLocation = inventoryLevels.find(
-    //         (loc) => loc.id === locationForExport,
-    //       );
-
-    //       console.log("Found Location for ", locationName, foundLocation);
-    //       // Prepare quantities based on location availability
-    //       const locationQuantities = foundLocation
-    //         ? {
-    //             committed: foundLocation.quantities.committed || 0,
-    //             damaged: foundLocation.quantities.damaged || 0,
-    //             available: foundLocation.quantities.available || 0,
-    //             on_hand: foundLocation.quantities.on_hand || 0,
-    //           }
-    //         : {
-    //             committed: "not stocked",
-    //             damaged: "not stocked",
-    //             available: "not stocked",
-    //             on_hand: "not stocked",
-    //           };
-
-    //       return [
-    //         variant.product.handle,
-    //         variant.product.title,
-    //         "size",
-    //         variant.title,
-    //         "",
-    //         "",
-    //         "",
-    //         "",
-    //         sku || "",
-    //         variant.barcode || "",
-    //         hsCode || "",
-    //         COO || "",
-    //         locationName, // Render the location name
-    //         locationQuantities.committed,
-    //         locationQuantities.damaged,
-    //         locationQuantities.available,
-    //         locationQuantities.on_hand,
-    //       ];
-    //     },
-    //   );
-    // }
+          return [
+            variant.product.handle,
+            variant.product.title,
+            options[0]?.name || "",
+            options[0]?.values || "",
+            options[1]?.name || "",
+            options[1]?.values || "",
+            options[2]?.name || "",
+            options[2]?.values || "",
+            sku || "",
+            variant.barcode || "",
+            hsCode || "",
+            COO || "",
+            locationName, // Render the location name
+            locationQuantities.committed,
+            locationQuantities.damaged,
+            locationQuantities.available,
+            locationQuantities.on_hand,
+          ];
+        });
+      },
+    );
   }
   if (selectedExport.includes(ALL_VARIANTS)) {
     dataset = exportDataForMultipleLocationQuantites(value);
+    rows = dataset.flatMap(
+      ({ variant, COO, hsCode, sku, inventoryLevels, options }) => {
+        const locationsToMap =
+          locationForExport === "All-Locations"
+            ? locations
+            : locations.filter(({ id }) => id === locationForExport);
 
-    rows = dataset.flatMap(({ variant, COO, hsCode, sku, inventoryLevels }) => {
-      const locationsToMap =
-        locationForExport === "All-Locations"
-          ? locations
-          : locations.filter(({ id }) => id === locationForExport);
+        return locationsToMap.map(({ id: locId, name: locationName }) => {
+          const locationInventory = inventoryLevels.find(
+            (loc) => loc.id === locId,
+          );
+          // Prepare quantities based on location availability
+          const locationQuantities = locationInventory
+            ? {
+                committed: locationInventory.quantities.committed || 0,
+                damaged: locationInventory.quantities.damaged || 0,
+                available: locationInventory.quantities.available || 0,
+                on_hand: locationInventory.quantities.on_hand || 0,
+              }
+            : {
+                committed: "not stocked",
+                damaged: "not stocked",
+                available: "not stocked",
+                on_hand: "not stocked",
+              };
 
-      return locationsToMap.map(({ id: locId, name: locationName }) => {
-        const locationInventory = inventoryLevels.find(
-          (loc) => loc.id === locId,
-        );
-        // Prepare quantities based on location availability
-        const locationQuantities = locationInventory
-          ? {
-              committed: locationInventory.quantities.committed || 0,
-              damaged: locationInventory.quantities.damaged || 0,
-              available: locationInventory.quantities.available || 0,
-              on_hand: locationInventory.quantities.on_hand || 0,
-            }
-          : {
-              committed: "not stocked",
-              damaged: "not stocked",
-              available: "not stocked",
-              on_hand: "not stocked",
-            };
-
-        return [
-          variant.product.handle,
-          variant.product.title,
-          "size",
-          variant.title,
-          "",
-          "",
-          "",
-          "",
-          sku || "",
-          variant.barcode || "",
-          hsCode || "",
-          COO || "",
-          locationName, // Render the location name
-          locationQuantities.committed,
-          locationQuantities.damaged,
-          locationQuantities.available,
-          locationQuantities.on_hand,
-        ];
-      });
-    });
+          return [
+            variant.product.handle,
+            variant.product.title,
+            options[0]?.name || "",
+            options[0]?.values || "",
+            options[1]?.name || "",
+            options[1]?.values || "",
+            options[2]?.name || "",
+            options[2]?.values || "",
+            sku || "",
+            variant.barcode || "",
+            hsCode || "",
+            COO || "",
+            locationName, // Render the location name
+            locationQuantities.committed,
+            locationQuantities.damaged,
+            locationQuantities.available,
+            locationQuantities.on_hand,
+          ];
+        });
+      },
+    );
   }
 
   const exportToCSV = () => {

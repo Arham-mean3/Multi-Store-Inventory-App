@@ -424,15 +424,13 @@ export default function Index() {
   // STATE-HANDLING-START-START-HERE
   const [fetchData, setFetchData] = useState(data);
   const [selected, setSelected] = useState("");
-  const [currentPage, setCurrentPage] = useState(0);
+  // const [currentPage, setCurrentPage] = useState(0);
   const [custom, setCustom] = useState([]);
   const [showTimeUser, setShowTimeUser] = useState(0);
   const [active, setActive] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
+  const [paginatedOrders, setPaginatedOrders] = useState([]);
   // STATE-HANDLING-START-END-HERE
-  const itemsPerPage = 50;
-
   const {
     transformedData,
     setLocations,
@@ -455,33 +453,127 @@ export default function Index() {
     [locations],
   );
 
-  const deselectedInventoryData = useMemo(
-    () =>
-      fetchData
-        // .filter(({ node }) => node.variant.product.hasOutOfStockVariants)
-        .map(({ node }) => ({
-          id: node.id,
-          sku: node.sku,
-          COO: node.countryCodeOfOrigin,
-          hsCode: node.harmonizedSystemCode,
-          variant: node.variant,
-          quantities: node.inventoryLevels.edges.reduce((acc, { node }) => {
-            // Filter quantities for the selected location
-            if (selected && node.location.id === selected) {
-              node.quantities.forEach(({ name, quantity }) => {
+  // const deselectedInventoryData = useMemo(
+  //   () =>
+  //     fetchData.map(({ node }) => {
+  //       const {
+  //         id,
+  //         sku,
+  //         countryCodeOfOrigin: COO,
+  //         harmonizedSystemCode: hsCode,
+  //         variant,
+  //       } = node;
+  //       const { product } = variant;
+
+  //       // Find matching options based on the variant title
+  //       const options = product.options.flatMap((option) => {
+  //         // Check if the option.values array has more than one value
+  //         if (option.values.length > 1) {
+  //           // Filter and map matched values
+  //           const matchedValues = option.values
+  //             .filter((value) => value === variant.title)
+  //             .map((value) => ({
+  //               name: option.name,
+  //               value,
+  //             }));
+
+  //           // Return matched options if any
+  //           if (matchedValues.length > 0) {
+  //             return matchedValues;
+  //           }
+  //         }
+
+  //         // Fallback: Return the original option with its values
+  //         return {
+  //           name: option.name,
+  //           values: option.values, // Include all values for options with a single value or no match
+  //         };
+  //       });
+
+  //       // Compute quantities for the selected location
+  //       const quantities = node.inventoryLevels.edges.reduce(
+  //         (acc, { node }) => {
+  //           if (selected && node.location.id === selected) {
+  //             node.quantities.forEach(({ name, quantity }) => {
+  //               acc[name] = quantity;
+  //             });
+  //           }
+  //           return acc;
+  //         },
+  //         {},
+  //       );
+
+  //       return {
+  //         id,
+  //         sku,
+  //         COO,
+  //         hsCode,
+  //         variant,
+  //         quantities,
+  //         inventoryLevels: {
+  //           location: node.inventoryLevels.edges.map(
+  //             ({ node }) => node.location.id,
+  //           ),
+  //         },
+  //         options, // Add matchOptions to the result
+  //       };
+  //     }),
+  //   [fetchData, selected],
+  // );
+
+  const deselectedInventoryData = useMemo(() => {
+    if (!fetchData) return [];
+
+    return fetchData.map(({ node }) => {
+      const {
+        id,
+        sku,
+        countryCodeOfOrigin: COO,
+        harmonizedSystemCode: hsCode,
+        variant,
+      } = node;
+      const { product } = variant;
+
+      // Optimize options mapping
+      const options = product.options
+        .map((option) => {
+          const matchedValues = option.values.includes(variant.title)
+            ? [{ name: option.name, value: variant.title }]
+            : [];
+          return matchedValues.length > 0
+            ? matchedValues
+            : { name: option.name, values: option.values };
+        })
+        .flat();
+
+      // Compute quantities for the selected location
+      const quantities = selected
+        ? node.inventoryLevels.edges.reduce((acc, { node: invNode }) => {
+            if (invNode.location.id === selected) {
+              invNode.quantities.forEach(({ name, quantity }) => {
                 acc[name] = quantity;
               });
             }
             return acc;
-          }, {}),
-          inventoryLevels: {
-            location: node.inventoryLevels.edges.map(
-              ({ node }) => node.location.id,
-            ),
-          },
-        })),
-    [fetchData, selected],
-  );
+          }, {})
+        : {};
+
+      return {
+        id,
+        sku,
+        COO,
+        hsCode,
+        variant,
+        quantities,
+        inventoryLevels: {
+          location: node.inventoryLevels.edges.map(
+            ({ node: locNode }) => locNode.location.id,
+          ),
+        },
+        options,
+      };
+    });
+  }, [fetchData, selected]);
 
   const filteredInventoryData = useMemo(() => {
     if (!selected) return deselectedInventoryData; // If no location is selected, return all data
@@ -501,25 +593,6 @@ export default function Index() {
 
   let inventoryData = filteredInventoryData;
 
-  const totalPages = Math.ceil(filteredInventoryData.length / itemsPerPage);
-
-  const paginatedOrders = inventoryData.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage,
-  );
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
   let matchedData = transformedData
     .map((parsedItem) => {
       // Find a matching record in customdata
@@ -537,7 +610,7 @@ export default function Index() {
         return isMatch && locationMatch;
       });
 
-      // console.log(matchingItem);
+      // console.log("Matched Items", matchingItem);
 
       if (matchingItem) {
         return {
@@ -624,7 +697,7 @@ export default function Index() {
   }, [deselectedLocationData]);
 
   useEffect(() => {
-    // console.log("Matched Data", matchedData)
+    console.log("Matched Data", matchedData);
     setMatchData(matchedData);
   }, [matchedData.length > 0]);
 
@@ -641,33 +714,13 @@ export default function Index() {
   useEffect(() => {
     if (fetcher.data?.success) {
       setFetchData(data);
+      console.log("fetcher json 2", fetcher.data);
       setIsProcessing(false);
+      shopify.toast.show("Data Updated Sucessfully");
     }
   }, [fetcher.data?.success]);
 
-  useEffect(() => {
-    setCurrentPage(0); // Reset currentPage on data change
-  }, [filteredInventoryData]);
-
-  // useEffect(() => {
-  //   if (fetcher.data?.success) {
-  //     console.log("State After updating", state);
-  //   } else {
-  //     console.log("State Before updating", state);
-  //   }
-  // }, [state, fetcher.data?.success]);
-
-  // useEffect(() => {
-  //   console.log("Processing State Data--", processingData);
-  // }, [processingData]);
-
-  useEffect(() => {
-    console.log("Processing State Before", isProcessing);
-    if (isProcessing) {
-      console.log("Processing State Between", isProcessing);
-    }
-    console.log("Processing State After", isProcessing);
-  }, [isProcessing]);
+  console.log("Inventory Filterd Data", filteredInventoryData);
 
   return (
     <div className="mx-4 lg:mx-10">
@@ -676,14 +729,7 @@ export default function Index() {
         selection={setSelected}
         selectedLocation={selected}
       />
-      <Inventory
-        data={inventoryData}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        paginatedOrders={paginatedOrders}
-        handleNextPage={handleNextPage}
-        handlePreviousPage={handlePreviousPage}
-      />
+      <Inventory data={inventoryData} setPaginatedOrders={setPaginatedOrders} />
       <div>
         <ExportModal
           locations={deselectedLocationData}
@@ -699,5 +745,3 @@ export default function Index() {
     </div>
   );
 }
-
-//  <ImportEmailLayout length={2} size={1} errors={[]} missing={["Available", "Title"]}/>

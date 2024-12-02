@@ -75,26 +75,37 @@ export default function ImportEmailLayout({ length, size, errors, missing }) {
               }}
             >
               Missing Column{comma}:{" "}
-              {missing.map((name, index) => (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
-                  key={index}
-                >
-                  <span
+              {missing.length > 0 ? (
+                missing.map((name, index) => (
+                  <div
                     style={{
-                      color: "#007bff",
-                      fontWeight: "normal",
-                      marginLeft: 5,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 2,
                     }}
+                    key={index}
                   >
-                    {index + 1}: {name}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      style={{
+                        color: "#007bff",
+                        fontWeight: "normal",
+                        marginLeft: 10,
+                      }}
+                    >
+                      {index + 1}: {name}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <span
+                  style={{
+                    fontWeight: "normal",
+                    marginLeft: 5,
+                  }}
+                >
+                  None
+                </span>
+              )}
             </Text>
           </Row>
         )}
@@ -153,7 +164,7 @@ export default function ImportEmailLayout({ length, size, errors, missing }) {
                     style={{
                       color: "#007bff",
                       fontWeight: "normal",
-                      marginLeft: 5,
+                      marginLeft: 10,
                     }}
                     key={index}
                   >

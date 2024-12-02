@@ -8,7 +8,7 @@ import {
   RangeSlider,
 } from "@shopify/polaris";
 import { useState, useCallback } from "react";
-import { heading, sortOptions } from "../lib/extras";
+import { heading } from "../lib/extras";
 
 export default function InventoryTable({
   currentPage,
@@ -21,6 +21,9 @@ export default function InventoryTable({
   allResourcesSelected,
   handleSelectionChange,
   resourceName,
+  queryValue,
+  setQueryValue,
+  handleFiltersQueryChange,
 }) {
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   // Top of Table Header
@@ -123,7 +126,6 @@ export default function InventoryTable({
   const [accountStatus, setAccountStatus] = useState(undefined);
   const [moneySpent, setMoneySpent] = useState(undefined);
   const [taggedWith, setTaggedWith] = useState("");
-  const [queryValue, setQueryValue] = useState("");
 
   const handleAccountStatusChange = useCallback(
     (value) => setAccountStatus(value),
@@ -135,10 +137,6 @@ export default function InventoryTable({
   );
   const handleTaggedWithChange = useCallback(
     (value) => setTaggedWith(value),
-    [],
-  );
-  const handleFiltersQueryChange = useCallback(
-    (value) => setQueryValue(value),
     [],
   );
   const handleAccountStatusRemove = useCallback(
@@ -162,6 +160,8 @@ export default function InventoryTable({
     handleQueryValueRemove,
     handleTaggedWithRemove,
   ]);
+
+
 
   const filters = [
     {
@@ -246,8 +246,6 @@ export default function InventoryTable({
   return (
     <LegacyCard>
       <IndexFilters
-        sortOptions={sortOptions}
-        sortSelected={sortSelected}
         queryValue={queryValue}
         queryPlaceholder="Searching in all"
         onQueryChange={handleFiltersQueryChange}

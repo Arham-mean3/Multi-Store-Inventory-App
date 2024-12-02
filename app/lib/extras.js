@@ -1,4 +1,3 @@
-import Inventory from "../components/Inventory";
 
 export const resourceName = {
   singular: "order",
@@ -41,46 +40,111 @@ export const customdata = (data) => {
   }));
 };
 
-export const newInventoryStructureData = (data) => {
-  return data.map(({ node }) => ({
-    id: node.id,
-    sku: node.sku,
-    COO: node.countryCodeOfOrigin,
-    hsCode: node.harmonizedSystemCode,
-    product: node.variant.product,
-    variant: node.variant,
-    inventoryLevels: node.inventoryLevels.edges.map(({ node }) => ({
-      id: node.location.id,
-      name: node.location.name,
-      quantities: node.quantities.reduce((acc, { name, quantity }) => {
-        acc[name] = quantity;
-        return acc;
-      }, {}),
-    })),
-  }));
-};
-
 // New Array Structure for All Variants Export
 
 export const exportDataForMultipleLocationQuantites = (data) => {
-  return data.map(({ node }) => ({
-    id: node.id,
-    sku: node.sku,
-    COO: node.countryCodeOfOrigin,
-    hsCode: node.harmonizedSystemCode,
-    product: node.variant.product,
-    variant: node.variant,
-    inventoryLevels: node.inventoryLevels.edges.map(({ node }) => ({
-      id: node.location.id,
-      name: node.location.name,
-      quantities: node.quantities.reduce((acc, { name, quantity }) => {
-        acc[name] = quantity;
-        return acc;
-      }, {}),
-    })),
-  }));
+  return data.map(({ node }) => {
+    const { variant } = node;
+    const { product } = variant;
+
+    // Generate matchingOptions
+    const options = product.options.map((option) => {
+      // Check if the option.values array has more than one value
+      if (option.values.length > 1) {
+        // Filter and map matched values
+        const matchedValues = option.values
+          .filter((value) => value === variant.title)
+          .map((value) => ({
+            name: option.name,
+            values: value,
+          }));
+
+        // Return matched options if any
+        if (matchedValues.length > 0) {
+          return matchedValues;
+        }
+      }
+
+      // Fallback: Return the original option with its values
+      return {
+        name: option.name,
+        values: option.values[0],
+      };
+    });
+
+    const flattenedOptions = options.flat();
+    return {
+      id: node.id,
+      sku: node.sku,
+      COO: node.countryCodeOfOrigin,
+      hsCode: node.harmonizedSystemCode,
+      product: node.variant.product,
+      variant: node.variant,
+      inventoryLevels: node.inventoryLevels.edges.map(({ node }) => ({
+        id: node.location.id,
+        name: node.location.name,
+        quantities: node.quantities.reduce((acc, { name, quantity }) => {
+          acc[name] = quantity;
+          return acc;
+        }, {}),
+      })),
+      options: flattenedOptions,
+    };
+  });
 };
 
+export const newInventoryStructureData = (data) => {
+  return data.map(({ node }) => {
+    const { variant } = node;
+    const { product } = variant;
+
+    // Generate matchingOptions
+    const options = product.options.map((option) => {
+      // Check if the option.values array has more than one value
+      if (option.values.length > 1) {
+        // Filter and map matched values
+        const matchedValues = option.values
+          .filter((value) => value === variant.title)
+          .map((value) => ({
+            name: option.name,
+            values: value,
+          }));
+
+        // Return matched options if any
+        if (matchedValues.length > 0) {
+          return matchedValues;
+        }
+      }
+
+      // Fallback: Return the original option with its values
+      return {
+        name: option.name,
+        values: option.values[0],
+      };
+    });
+
+    // Flatten the matchingOptions if it has arrays inside
+    const flattenedOptions = options.flat();
+
+    return {
+      id: node.id,
+      sku: node.sku,
+      COO: node.countryCodeOfOrigin,
+      hsCode: node.harmonizedSystemCode,
+      product: node.variant.product,
+      variant: node.variant,
+      inventoryLevels: node.inventoryLevels.edges.map(({ node }) => ({
+        id: node.location.id,
+        name: node.location.name,
+        quantities: node.quantities.reduce((acc, { name, quantity }) => {
+          acc[name] = quantity;
+          return acc;
+        }, {}),
+      })),
+      options: flattenedOptions,
+    };
+  });
+};
 // New Array Structure for Current Page Export
 export const currentPageSpecificItemsExport = (currentItems, custom) => {
   let data = currentItems.map((items) => {
@@ -101,6 +165,7 @@ export const currentPageSpecificItemsExport = (currentItems, custom) => {
         hsCode: matchingItem.hsCode,
         variant: matchingItem.variant,
         inventoryLevels: matchingItem.inventoryLevels,
+        options: matchingItem.options,
       };
     }
   });

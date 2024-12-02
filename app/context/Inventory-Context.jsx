@@ -254,7 +254,7 @@ export default function InventoryContextProvider({ children }) {
       quantities: {
         available:
           row["Available"] === "not stocked"
-            ? 0
+            ? "not stocked"
             : row["Available"] === ""
               ? null // Explicitly set to null for empty string
               : isNaN(parseFloat(row["Available"])) // Check if parsing results in NaN
@@ -262,19 +262,19 @@ export default function InventoryContextProvider({ children }) {
                 : parseFloat(row["Available"]),
         committed:
           row["Committed"] === "not stocked"
-            ? 0
+            ? "not stocked"
             : isNaN(parseFloat(row["Committed"]))
               ? null
               : parseFloat(row["Committed"]),
         damaged:
           row["Damaged"] === "not stocked"
-            ? 0
+            ? "not stocked"
             : isNaN(parseFloat(row["Damaged"]))
               ? null
               : parseFloat(row["Damaged"]),
         on_hand:
           row["On Hand"] === "not stocked"
-            ? 0
+            ? "not stocked"
             : isNaN(parseFloat(row["On Hand"]))
               ? null
               : parseFloat(row["On Hand"]),

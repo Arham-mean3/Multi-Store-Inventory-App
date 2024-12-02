@@ -1,7 +1,7 @@
 import { ActionList, Button, Popover, TextField } from "@shopify/polaris";
 import React, { useCallback, useEffect, useState } from "react";
 
-export function Cell({ val, type }) {
+export function Cell({ val, type, id,  }) {
   const [popoverActive, setPopoverActive] = useState(false);
   const togglePopoverActive = useCallback(
     () => setPopoverActive((popoverActive) => !popoverActive),
