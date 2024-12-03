@@ -20,6 +20,7 @@ const INITIAL_STATES = {
   transformedData: [],
   popoverActive: false,
   loading: false,
+  changesArray: [],
   setMatchData: () => {},
   handleImport: () => {},
   handleClose: () => {},
@@ -33,6 +34,7 @@ const INITIAL_STATES = {
   togglePopoverActive: () => {},
   setPopoverActive: () => {},
   setLoading: () => {},
+  setChangesArray: () => {},
 };
 
 export const InventoryContext = createContext(INITIAL_STATES);
@@ -49,6 +51,10 @@ export default function InventoryContextProvider({ children }) {
   const [selectedExport, setSelectedExport] = useState(["current_page"]);
   const [selectedExportAs, setSelectedExportAs] = useState(["csv_plain"]);
   const [popoverActive, setPopoverActive] = useState(false);
+
+  // InventorY Real-times Row Changes
+
+  const [changesArray, setChangesArray] = useState([]);
 
   // Missing Column States
   const [columnMissing, setColumnMissing] = useState([]);
@@ -234,6 +240,7 @@ export default function InventoryContextProvider({ children }) {
     [],
   );
 
+  // Inventory Row Functionality
   // Transforming the data that is coming from a CSV
   let transformedData = useMemo(() => {
     if (!parsedData || parsedData.length === 0) return [];
@@ -296,6 +303,7 @@ export default function InventoryContextProvider({ children }) {
     locations,
     columnMissing,
     loading,
+    changesArray,
     setLoading,
     setPopoverActive,
     setMatchData,
@@ -310,6 +318,7 @@ export default function InventoryContextProvider({ children }) {
     toggleImport,
     handleDropZoneDrop,
     togglePopoverActive,
+    setChangesArray,
   };
 
   return (

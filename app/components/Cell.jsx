@@ -1,7 +1,7 @@
 import { ActionList, Button, Popover, TextField } from "@shopify/polaris";
 import React, { useCallback, useEffect, useState } from "react";
 
-export function Cell({ val, type, id,  }) {
+export function Cell({ val, type, id }) {
   const [popoverActive, setPopoverActive] = useState(false);
   const togglePopoverActive = useCallback(
     () => setPopoverActive((popoverActive) => !popoverActive),
@@ -33,7 +33,7 @@ export function Cell({ val, type, id,  }) {
   );
 }
 
-export function RightCell({ val, type }) {
+export function RightCell({ val, type, id, onValueChange, setAvailable }) {
   const [popoverActive, setPopoverActive] = useState(false);
   const [value, setValue] = useState(val);
 
@@ -42,7 +42,18 @@ export function RightCell({ val, type }) {
     setValue(val);
   }, [val]);
 
-  const handleChange = useCallback((newValue) => setValue(newValue), []);
+  const handleChange = useCallback(
+    (newValue) => {
+      setValue(newValue);
+      if (onValueChange) {
+        onValueChange(id, Number(newValue)); // Pass numeric value to the parent
+        setAvailable(Number(newValue));
+      }
+    },
+    [onValueChange],
+  );
+
+  // Toggle Popper Active Functionality
   const togglePopoverActive = useCallback(
     () => setPopoverActive((popoverActive) => !popoverActive),
     [],
