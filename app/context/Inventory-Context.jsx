@@ -21,6 +21,8 @@ const INITIAL_STATES = {
   popoverActive: false,
   loading: false,
   changesArray: [],
+  selected: "",
+  selectedItems: [],
   setMatchData: () => {},
   handleImport: () => {},
   handleClose: () => {},
@@ -35,29 +37,37 @@ const INITIAL_STATES = {
   setPopoverActive: () => {},
   setLoading: () => {},
   setChangesArray: () => {},
+  setSelected: () => {},
+  setSelectedItems: () => {},
 };
 
 export const InventoryContext = createContext(INITIAL_STATES);
 
 export default function InventoryContextProvider({ children }) {
+  // Selected Locations Id
+  const [selected, setSelected] = useState("");
+
   // Import Modal Button State
   const [importBtn, setImportBtn] = useState(false);
   const [checked, setChecked] = useState(false);
   const [file, setFile] = useState([]);
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(false);
+
   // Export Modal Button State
   const [active, setActive] = useState(false);
   const [selectedExport, setSelectedExport] = useState(["current_page"]);
   const [selectedExportAs, setSelectedExportAs] = useState(["csv_plain"]);
   const [popoverActive, setPopoverActive] = useState(false);
 
-  // InventorY Real-times Row Changes
-
+  // Inventory Real-times Row Changes
   const [changesArray, setChangesArray] = useState([]);
 
   // Missing Column States
   const [columnMissing, setColumnMissing] = useState([]);
+
+  // Selected Inventory Items For Exporting
+  const [selectedItems, setSelectedItems] = useState([]);
 
   const compulsoryColumns = [
     "Handle",
@@ -70,21 +80,17 @@ export default function InventoryContextProvider({ children }) {
   ];
 
   // Parsed-Data From Papa-Parser
-
   const [parsedData, setParsedData] = useState([]);
 
   // Match-Data
-
   const [matchData, setMatchData] = useState([]);
 
   // Effects
-
   useEffect(() => {
     setParsedData([]);
   }, []);
 
   // Import Modal Functionality
-
   const toggleImport = useCallback(() => {
     setImportBtn((importBtn) => !importBtn);
     if (!importBtn) setFile([]);
@@ -94,81 +100,6 @@ export default function InventoryContextProvider({ children }) {
   }, []);
 
   const handleCheckbox = useCallback((value) => setChecked(value), []);
-
-  // const handleImport = () => {
-  //   if (file.length > 0) {
-  //     const acceptedFiles = file[0];
-  //     Papa.parse(acceptedFiles, {
-  //       header: true,
-  //       skipEmptyLines: true,
-  //       complete: (results) => {
-  //         console.log("Parsed Data:", results.data);
-  //         setParsedData(results.data); // Save parsed data to context/state
-
-  //   // Validate columns
-  //   const parsedColumns = results.meta.fields; // Extract parsed column names
-  //   // console.log("Parsed Columns", parsedColumns);
-  //   const missingColumns = compulsoryColumns.filter(
-  //     (column) => !parsedColumns.includes(column),
-  //   );
-
-  //   if (missingColumns.length > 0) {
-  //     console.error("Missing Columns:", missingColumns);
-  //     setColumnMissing((col) => {
-  //       const uniqueMissing = [...new Set([...col, ...missingColumns])]; // Combine and deduplicate
-  //       return uniqueMissing;
-  //     });
-  //   } else {
-  //     setColumnMissing([]); // Clear missing column state if none are missing
-  //   }
-  // },
-  //       error: (error) => {
-  //         console.error("Error parsing CSV:", error);
-  //       },
-  //     });
-  //   }
-  // };
-
-  // const handleImport = () => {
-  //   if (file.length > 0) {
-  //     setLoading(true); // Start loading immediately
-  //     const acceptedFiles = file[0];
-  //     Papa.parse(acceptedFiles, {
-  //       header: true,
-  //       skipEmptyLines: true,
-  //       complete: (results) => {
-  //         console.log("Parsed Data:", results.data);
-  //         setParsedData(results.data); // Save parsed data to context/state
-
-  //         // Validate columns
-  //         const parsedColumns = results.meta.fields; // Extract parsed column names
-  //         // console.log("Parsed Columns", parsedColumns);
-  //         const missingColumns = compulsoryColumns.filter(
-  //           (column) => !parsedColumns.includes(column),
-  //         );
-
-  //         if (missingColumns.length > 0) {
-  //           console.error("Missing Columns:", missingColumns);
-  //           setColumnMissing((col) => {
-  //             const uniqueMissing = [...new Set([...col, ...missingColumns])]; // Combine and deduplicate
-  //             return uniqueMissing;
-  //           });
-  //         } else {
-  //           setColumnMissing([]); // Clear missing column state if none are missing
-  //         }
-
-  //         // Stop loading after a delay
-  //         setTimeout(() => {
-  //           setLoading(false);
-  //         }, 1000); // Ensure loading animation completes
-  //       },
-  //       error: (error) => {
-  //         console.error("Error parsing CSV:", error);
-  //         setLoading(false); // Stop loading immediately on error
-  //       },
-  //     });
-  //   }
-  // };
 
   const handleImport = () => {
     if (file.length > 0) {
@@ -304,6 +235,10 @@ export default function InventoryContextProvider({ children }) {
     columnMissing,
     loading,
     changesArray,
+    selected,
+    selectedItems,
+    setSelectedItems,
+    setSelected,
     setLoading,
     setPopoverActive,
     setMatchData,

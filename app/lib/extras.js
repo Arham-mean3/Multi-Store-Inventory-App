@@ -172,3 +172,80 @@ export const currentPageSpecificItemsExport = (currentItems, custom) => {
 
   return data;
 };
+
+
+
+  // const handleImport = () => {
+  //   if (file.length > 0) {
+  //     const acceptedFiles = file[0];
+  //     Papa.parse(acceptedFiles, {
+  //       header: true,
+  //       skipEmptyLines: true,
+  //       complete: (results) => {
+  //         console.log("Parsed Data:", results.data);
+  //         setParsedData(results.data); // Save parsed data to context/state
+
+  //   // Validate columns
+  //   const parsedColumns = results.meta.fields; // Extract parsed column names
+  //   // console.log("Parsed Columns", parsedColumns);
+  //   const missingColumns = compulsoryColumns.filter(
+  //     (column) => !parsedColumns.includes(column),
+  //   );
+
+  //   if (missingColumns.length > 0) {
+  //     console.error("Missing Columns:", missingColumns);
+  //     setColumnMissing((col) => {
+  //       const uniqueMissing = [...new Set([...col, ...missingColumns])]; // Combine and deduplicate
+  //       return uniqueMissing;
+  //     });
+  //   } else {
+  //     setColumnMissing([]); // Clear missing column state if none are missing
+  //   }
+  // },
+  //       error: (error) => {
+  //         console.error("Error parsing CSV:", error);
+  //       },
+  //     });
+  //   }
+  // };
+
+  // const handleImport = () => {
+  //   if (file.length > 0) {
+  //     setLoading(true); // Start loading immediately
+  //     const acceptedFiles = file[0];
+  //     Papa.parse(acceptedFiles, {
+  //       header: true,
+  //       skipEmptyLines: true,
+  //       complete: (results) => {
+  //         console.log("Parsed Data:", results.data);
+  //         setParsedData(results.data); // Save parsed data to context/state
+
+  //         // Validate columns
+  //         const parsedColumns = results.meta.fields; // Extract parsed column names
+  //         // console.log("Parsed Columns", parsedColumns);
+  //         const missingColumns = compulsoryColumns.filter(
+  //           (column) => !parsedColumns.includes(column),
+  //         );
+
+  //         if (missingColumns.length > 0) {
+  //           console.error("Missing Columns:", missingColumns);
+  //           setColumnMissing((col) => {
+  //             const uniqueMissing = [...new Set([...col, ...missingColumns])]; // Combine and deduplicate
+  //             return uniqueMissing;
+  //           });
+  //         } else {
+  //           setColumnMissing([]); // Clear missing column state if none are missing
+  //         }
+
+  //         // Stop loading after a delay
+  //         setTimeout(() => {
+  //           setLoading(false);
+  //         }, 1000); // Ensure loading animation completes
+  //       },
+  //       error: (error) => {
+  //         console.error("Error parsing CSV:", error);
+  //         setLoading(false); // Stop loading immediately on error
+  //       },
+  //     });
+  //   }
+  // };

@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a6f7886077bea7e16b6f1614edcff9e7"
-application_url = "https://rolling-href-rio-rotary.trycloudflare.com"
+application_url = "https://francis-singing-divorce-themes.trycloudflare.com"
 embedded = true
 name = "multi-store-inventory-app"
 handle = "multi-store-inventory-app"
@@ -24,9 +24,9 @@ scopes = "read_customers,read_inventory,read_locations,write_inventory,write_pro
 
 [auth]
 redirect_urls = [
-  "https://rolling-href-rio-rotary.trycloudflare.com/auth/callback",
-  "https://rolling-href-rio-rotary.trycloudflare.com/auth/shopify/callback",
-  "https://rolling-href-rio-rotary.trycloudflare.com/api/auth/callback"
+  "https://francis-singing-divorce-themes.trycloudflare.com/auth/callback",
+  "https://francis-singing-divorce-themes.trycloudflare.com/auth/shopify/callback",
+  "https://francis-singing-divorce-themes.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

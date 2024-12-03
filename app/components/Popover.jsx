@@ -1,6 +1,8 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useContext, useState } from "react";
 import { Icon, Listbox, Popover, Scrollable } from "@shopify/polaris";
 import { CaretDownIcon } from "@shopify/polaris-icons";
+import { InventoryContext } from "../context/Inventory-Context";
+import { useAppBridge } from "@shopify/app-bridge-react";
 
 export default function CustomPopover({
   options,
@@ -10,6 +12,9 @@ export default function CustomPopover({
   locationMap,
 }) {
   const [popoverActive, setPopoverActive] = useState(false);
+  const shopify = useAppBridge();
+
+  const { changesArray } = useContext(InventoryContext);
 
   const togglePopoverActive = useCallback(
     () => setPopoverActive((popoverActive) => !popoverActive),
@@ -18,11 +23,15 @@ export default function CustomPopover({
 
   const handleSelectChange = useCallback(
     (value) => {
+      if (changesArray.length > 0) {
+        shopify.toast.show("You have unsaved changes.");
+        return;
+      }
       setLocationId(value);
       selection(value);
       togglePopoverActive(); // Close the Popover
     },
-    [selection, togglePopoverActive],
+    [selection, togglePopoverActive, changesArray],
   );
 
   const locationName = locationMap.get(locationId) || "Unknown Location";

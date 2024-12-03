@@ -1,14 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import InventoryTable from "./InventoryTable";
-import {
-  IndexTable,
-  Text,
-  Thumbnail,
-  useIndexResourceState,
-} from "@shopify/polaris";
-import { Cell, RightCell } from "./Cell";
-import { ImageIcon } from "@shopify/polaris-icons";
+import { useIndexResourceState } from "@shopify/polaris";
 import RowMarkup from "./RowMarkup";
+import { InventoryContext } from "../context/Inventory-Context";
 
 export default function Inventory({ data, setPaginatedOrders }) {
   const resourceName = {
@@ -26,6 +26,9 @@ export default function Inventory({ data, setPaginatedOrders }) {
     [],
   );
 
+  // Changes Array
+  const { changesArray, setSelectedItems } = useContext(InventoryContext);
+
   // For finding or querying or searching a items from the search sections
 
   const filteredData = useMemo(() => {
@@ -37,9 +40,6 @@ export default function Inventory({ data, setPaginatedOrders }) {
         order.variant.barcode?.toLowerCase().includes(lowerQuery), // Include SKU filtering
     );
   }, [data, queryValue]);
-
-  const { selectedResources, allResourcesSelected, handleSelectionChange } =
-    useIndexResourceState(filteredData);
 
   // Dividing the data into parts for showing pagination data
 
@@ -59,13 +59,21 @@ export default function Inventory({ data, setPaginatedOrders }) {
     [filteredData, currentPage],
   );
 
+  const { selectedResources, allResourcesSelected, handleSelectionChange } =
+    useIndexResourceState(paginatedOrders);
+
   // Pagination Button Next and Previous
 
   const handleNextPage = useCallback(() => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
+    if (changesArray.length === 0) {
+      if (currentPage < totalPages - 1) {
+        setCurrentPage(currentPage + 1);
+      }
+    } else {
+      console.log("Changes Array Length", changesArray.length);
+      shopify.toast.show("You have unsaved changes.");
     }
-  }, [totalPages, currentPage]);
+  }, [totalPages, currentPage, changesArray]);
 
   const handlePreviousPage = useCallback(() => {
     if (currentPage > 0) {
@@ -83,6 +91,12 @@ export default function Inventory({ data, setPaginatedOrders }) {
   useEffect(() => {
     setPaginatedOrders(paginatedOrders);
   }, [handleNextPage, handlePreviousPage]);
+
+  useEffect(() => {
+    setSelectedItems(selectedResources);
+  }, [selectedResources]);
+
+  console.log("Selected Resources", selectedResources);
 
   return (
     <>

@@ -65,7 +65,7 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
   return (
     <div className="w-10 h-32 lg:h-80 lg:w-40">
       <Modal
-        size="large"
+        size="small"
         open={importBtn}
         onClose={toggleImport}
         title="Import inventory by CSV"

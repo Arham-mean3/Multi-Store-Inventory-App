@@ -30,6 +30,7 @@ function Heading({ location, selection }) {
     id: loc.id,
   }));
 
+
   return (
     <div className="mb-8 md:mb-0">
       <div className="flex gap-4 justify-between items-center my-4">

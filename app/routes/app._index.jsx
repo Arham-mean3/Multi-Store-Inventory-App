@@ -25,6 +25,8 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { Resend } from "resend";
 import { render } from "@react-email/components";
 import ImportEmailLayout from "../email/Import-Email-Layout";
+import { Button } from "@shopify/polaris";
+import Alert from "../components/Alert";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -406,6 +408,45 @@ export const action = async ({ request }) => {
           { status: 404 },
         );
       }
+    case "RowUpdates":
+      try {
+        const { data } = formData;
+
+        const quantities = JSON.parse(data);
+
+        console.log("Quantities", quantities);
+
+        // Updating Queries Inventory Items Quantities
+        const updatedInventoryItemsQuantity = await admin.graphql(
+          `#graphql
+          ${updateInventoryQuantitiesQuery}
+          `,
+          {
+            variables: {
+              input: {
+                reason: "correction",
+                name: "available",
+                ignoreCompareQuantity: true,
+                quantities: quantities,
+              },
+            },
+          },
+        );
+        const updateItems = await updatedInventoryItemsQuantity.json();
+
+        return json(
+          {
+            message: "Successfully Inventory Items Updated!",
+            success: true,
+          },
+          { status: 201 },
+        );
+      } catch (error) {
+        return json(
+          { message: "Something went wrong!", error: error, success: false },
+          { status: 404 },
+        );
+      }
     default:
       break;
   }
@@ -423,12 +464,10 @@ export default function Index() {
 
   // STATE-HANDLING-START-START-HERE
   const [fetchData, setFetchData] = useState(data);
-  const [selected, setSelected] = useState("");
   // const [currentPage, setCurrentPage] = useState(0);
   const [custom, setCustom] = useState([]);
   const [showTimeUser, setShowTimeUser] = useState(0);
   const [active, setActive] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [paginatedOrders, setPaginatedOrders] = useState([]);
   // STATE-HANDLING-START-END-HERE
   const {
@@ -438,6 +477,10 @@ export default function Index() {
     columnMissing,
     setMatchData,
     setImportBtn,
+    setChangesArray,
+    changesArray,
+    selected,
+    setSelected,
   } = useContext(InventoryContext);
   // Deselection Of Data
   // Changes
@@ -671,7 +714,6 @@ export default function Index() {
     setShowTimeUser(timeDisplay); // Set the display time upfront
 
     try {
-      setIsProcessing(true);
       console.log("API-CALL", formData);
       await fetcher.submit(formData, { method: "POST" });
       setImportBtn(false);
@@ -684,6 +726,21 @@ export default function Index() {
       }, timeNeeded); // `timeNeeded` is the delay before activating (in milliseconds)
     } catch (error) {
       console.log("Something Went Wrong!", error);
+    }
+  };
+
+  // Inventory Row Available Update Functionality
+
+  const InventoryRowUpdate = async () => {
+    const formData = {
+      actionKey: "RowUpdates",
+      data: JSON.stringify(changesArray),
+    };
+    try {
+      await fetcher.submit(formData, { method: "POST" });
+      setChangesArray([]);
+    } catch (error) {
+      console.log("Something went wrong! --client");
     }
   };
 
@@ -713,17 +770,18 @@ export default function Index() {
 
   useEffect(() => {
     if (fetcher.data?.success) {
+      // console.log("New Data", data);
       setFetchData(data);
-      console.log("fetcher json 2", fetcher.data);
-      setIsProcessing(false);
-      shopify.toast.show("Data Updated Sucessfully");
+      // console.log("fetcher json 2", fetcher.data);
+      // shopify.toast.show("Data Updated Sucessfully");
     }
   }, [fetcher.data?.success]);
 
-  console.log("Inventory Filterd Data", filteredInventoryData);
-
   return (
     <div className="mx-4 lg:mx-10">
+      {changesArray.length > 0 && (
+        <Alert InventoryRowUpdate={InventoryRowUpdate} />
+      )}
       <Heading
         location={deselectedLocationData}
         selection={setSelected}

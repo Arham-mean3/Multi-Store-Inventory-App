@@ -1,35 +1,11 @@
-import { ActionList, Button, Popover, TextField } from "@shopify/polaris";
+import { ActionList, Popover, TextField } from "@shopify/polaris";
 import React, { useCallback, useEffect, useState } from "react";
 
-export function Cell({ val, type, id }) {
-  const [popoverActive, setPopoverActive] = useState(false);
-  const togglePopoverActive = useCallback(
-    () => setPopoverActive((popoverActive) => !popoverActive),
-    [],
-  );
-
-  const activator = (
-    <Button variant="monochromePlain" onClick={togglePopoverActive} disclosure>
-      <p className="text-xs lg:text-sm">{val}</p>
-    </Button>
-  );
+export function Cell({ val}) {
   return (
-    <Popover
-      active={popoverActive}
-      activator={activator}
-      autofocusTarget="first-node"
-      onClose={togglePopoverActive}
-    >
-      {type === "commited" && (
-        <ActionList actionRole="menuitem" items={[{ content: "No Value" }]} />
-      )}
-      {type === "unAvailable" && (
-        <ActionList
-          actionRole="menuitem"
-          items={[{ content: "Unavailable Value" }]}
-        />
-      )}
-    </Popover>
+    <div>
+      <p className="text-sm w-full ml-0 lg:ml-4 lg:text-sm">{val}</p>
+    </div>
   );
 }
 
@@ -70,13 +46,6 @@ export function RightCell({ val, type, id, onValueChange, setAvailable }) {
           maxHeight={10}
         />
       </div>
-      <Button
-        variant="monochromePlain"
-        onClick={togglePopoverActive}
-        disclosure
-      >
-        {/* Button content or icon */}
-      </Button>
     </div>
   );
 
@@ -99,3 +68,11 @@ export function RightCell({ val, type, id, onValueChange, setAvailable }) {
     </Popover>
   );
 }
+
+//  <Button
+// variant="monochromePlain"
+// onClick={togglePopoverActive}
+// disclosure
+// >
+// Button content or icon
+// </Button>

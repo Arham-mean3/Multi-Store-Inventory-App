@@ -275,6 +275,7 @@ export default function InventoryTable({
           allResourcesSelected ? "All" : selectedResources.length
         }
         onSelectionChange={handleSelectionChange}
+        hasMoreItems
         headings={heading}
         pagination={{
           hasNext: currentPage < totalPages - 1,

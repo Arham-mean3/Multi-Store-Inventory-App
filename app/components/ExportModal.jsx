@@ -17,6 +17,7 @@ import {
 export default function ExportModal({ currentPageData, locations, value }) {
   const CURRENT_PAGE = "current_page";
   const ALL_VARIANTS = "all_variants";
+  const SELECTED_ITEMS = "selected_variants";
   const CSV_EXCEL = "csv_excel";
   const CSV_PLAIN = "csv_plain";
 
@@ -45,6 +46,7 @@ export default function ExportModal({ currentPageData, locations, value }) {
     selectedExport,
     selectedExportAs,
     togglePopoverActive,
+    selectedItems,
   } = useContext(InventoryContext);
 
   const handleActiveOptionChange = (_) => {
@@ -109,8 +111,8 @@ export default function ExportModal({ currentPageData, locations, value }) {
             hsCode || "",
             COO || "",
             locationName, // Render the location name
-            locationQuantities.committed,
-            locationQuantities.damaged,
+            // locationQuantities.committed,
+            // locationQuantities.damaged,
             locationQuantities.available,
             locationQuantities.on_hand,
           ];
@@ -160,8 +162,63 @@ export default function ExportModal({ currentPageData, locations, value }) {
             hsCode || "",
             COO || "",
             locationName, // Render the location name
-            locationQuantities.committed,
-            locationQuantities.damaged,
+            // locationQuantities.committed,
+            // locationQuantities.damaged,
+            locationQuantities.available,
+            locationQuantities.on_hand,
+          ];
+        });
+      },
+    );
+  }
+  if (selectedExport.includes(SELECTED_ITEMS)) {
+    dataset = exportDataForMultipleLocationQuantites(value);
+
+    // Filter the dataset based on selectedItems
+    const filteredDataset = dataset.filter((data) =>
+      selectedItems.includes(data.id),
+    );
+
+    rows = filteredDataset.flatMap(
+      ({ variant, COO, hsCode, sku, inventoryLevels, options }) => {
+        const locationsToMap =
+          locationForExport === "All-Locations"
+            ? locations
+            : locations.filter(({ id }) => id === locationForExport);
+
+        return locationsToMap.map(({ id: locId, name: locationName }) => {
+          const locationInventory = inventoryLevels.find(
+            (loc) => loc.id === locId,
+          );
+          // Prepare quantities based on location availability
+          const locationQuantities = locationInventory
+            ? {
+                committed: locationInventory.quantities.committed || 0,
+                damaged: locationInventory.quantities.damaged || 0,
+                available: locationInventory.quantities.available || 0,
+                on_hand: locationInventory.quantities.on_hand || 0,
+              }
+            : {
+                committed: "not stocked",
+                damaged: "not stocked",
+                available: "not stocked",
+                on_hand: "not stocked",
+              };
+
+          return [
+            variant.product.handle,
+            variant.product.title,
+            options[0]?.name || "",
+            options[0]?.values || "",
+            options[1]?.name || "",
+            options[1]?.values || "",
+            options[2]?.name || "",
+            options[2]?.values || "",
+            sku || "",
+            variant.barcode || "",
+            hsCode || "",
+            COO || "",
+            locationName, // Render the location name
             locationQuantities.available,
             locationQuantities.on_hand,
           ];
@@ -170,6 +227,7 @@ export default function ExportModal({ currentPageData, locations, value }) {
     );
   }
 
+  console.log("Dataset", rows);
   const exportToCSV = () => {
     // Transform data into CSV format
     const headers = [
@@ -186,8 +244,6 @@ export default function ExportModal({ currentPageData, locations, value }) {
       "HS Code",
       "COO",
       "Location",
-      "Committed",
-      "Damaged",
       "Available",
       "On Hand",
     ];
@@ -283,6 +339,11 @@ export default function ExportModal({ currentPageData, locations, value }) {
                 choices={[
                   { label: "Current page", value: CURRENT_PAGE },
                   { label: "All variants", value: ALL_VARIANTS },
+                  {
+                    label: `${selectedItems.length} Selected Items`,
+                    value: SELECTED_ITEMS,
+                    disabled: selectedItems.length === 0,
+                  },
                 ]}
                 selected={selectedExport}
                 onChange={handleSelectedExport}
