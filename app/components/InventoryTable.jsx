@@ -7,8 +7,10 @@ import {
   ChoiceList,
   RangeSlider,
 } from "@shopify/polaris";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useContext } from "react";
 import { heading } from "../lib/extras";
+import Alert from "./Alert";
+import { InventoryContext } from "../context/Inventory-Context";
 
 export default function InventoryTable({
   currentPage,
@@ -24,6 +26,7 @@ export default function InventoryTable({
   queryValue,
   setQueryValue,
   handleFiltersQueryChange,
+  InventoryRowUpdate,
 }) {
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   // Top of Table Header
@@ -161,8 +164,6 @@ export default function InventoryTable({
     handleTaggedWithRemove,
   ]);
 
-
-
   const filters = [
     {
       key: "accountStatus",
@@ -243,6 +244,10 @@ export default function InventoryTable({
     });
   }
 
+  const { changesArray } = useContext(InventoryContext);
+
+  console.log("Handle Selection Changes", handleSelectionChange);
+
   return (
     <LegacyCard>
       <IndexFilters
@@ -267,7 +272,11 @@ export default function InventoryTable({
         onClearAll={handleFiltersClearAll}
         mode={mode}
         setMode={setMode}
+        disableStickyMode
       />
+      {changesArray.length > 0 && (
+        <Alert InventoryRowUpdate={InventoryRowUpdate} />
+      )}
       <IndexTable
         resourceName={resourceName}
         itemCount={orders.length}

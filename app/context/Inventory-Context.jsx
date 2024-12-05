@@ -39,6 +39,7 @@ const INITIAL_STATES = {
   setChangesArray: () => {},
   setSelected: () => {},
   setSelectedItems: () => {},
+  resetChanges: () => {},
 };
 
 export const InventoryContext = createContext(INITIAL_STATES);
@@ -171,6 +172,10 @@ export default function InventoryContextProvider({ children }) {
     [],
   );
 
+  const resetChanges = useCallback(() => {
+    setChangesArray([]);
+  }, []);
+
   // Inventory Row Functionality
   // Transforming the data that is coming from a CSV
   let transformedData = useMemo(() => {
@@ -254,6 +259,7 @@ export default function InventoryContextProvider({ children }) {
     handleDropZoneDrop,
     togglePopoverActive,
     setChangesArray,
+    resetChanges,
   };
 
   return (

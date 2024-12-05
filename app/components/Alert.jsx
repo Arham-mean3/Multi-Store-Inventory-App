@@ -5,23 +5,15 @@ import { InventoryContext } from "../context/Inventory-Context";
 export default function Alert({ InventoryRowUpdate }) {
   const { setChangesArray } = useContext(InventoryContext);
   return (
-    <div className="sticky top-0 right-0 left-0 z-50 mx-4">
-      <div className="bg-slate-800 p-3 text-white rounded-xl">
+    <div className="sticky top-0 right-0 left-0 z-50 transition-all ease-in-out border-b-[1px] border-gray-400">
+      <div className="bg-[#F9F9F9] px-2 py-2">
         <div className="flex justify-between items-center">
-          <p>Save Changes</p>
+          <p className="text-sm text-black font-semibold">Save Changes</p>
           <div className="flex gap-4">
-            <Button
-              variant="primary"
-              tone="critical"
-              onClick={() => setChangesArray([])}
-            >
+            <Button variant="tertiary" onClick={() => setChangesArray([])}>
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              tone="success"
-              onClick={InventoryRowUpdate}
-            >
+            <Button variant="secondary" onClick={InventoryRowUpdate}>
               Save Changes
             </Button>
           </div>

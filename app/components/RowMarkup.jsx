@@ -3,7 +3,7 @@ import Row from "./Row";
 import { InventoryContext } from "../context/Inventory-Context";
 
 export default function RowMarkup({ paginatedOrders, selectedResources }) {
-  const { changesArray, setChangesArray, selected } =
+  const { setChangesArray, selected } =
     useContext(InventoryContext);
 
   const handleAvailableChange = useCallback((id, newValue) => {
@@ -35,8 +35,6 @@ export default function RowMarkup({ paginatedOrders, selectedResources }) {
       return updatedArray;
     });
   }, [selected]);
-
-  console.log("Changes Array", changesArray);
 
   return (
     <>

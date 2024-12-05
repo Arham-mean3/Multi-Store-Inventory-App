@@ -62,6 +62,8 @@ const ImportModal = React.memo(({ active, InventoryUpdate, timeShown }) => {
     columnMissing.includes("title") &&
     columnMissing.includes("handle");
 
+  console.log("Import Modal Component Re-Renders");
+
   return (
     <div className="w-10 h-32 lg:h-80 lg:w-40">
       <Modal

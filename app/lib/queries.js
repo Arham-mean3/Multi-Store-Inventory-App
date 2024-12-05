@@ -1,6 +1,6 @@
 export const getInventoryItemsQuery = `
 query inventoryItems {
-  inventoryItems(first: 200) {
+  inventoryItems(first: 250) {
     edges {
       node {
         id
@@ -139,3 +139,4 @@ query ShopMetafield {
   }
 }
 `;
+

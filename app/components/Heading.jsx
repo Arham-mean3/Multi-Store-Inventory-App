@@ -30,12 +30,14 @@ function Heading({ location, selection }) {
     id: loc.id,
   }));
 
+  console.log("Heading Component Re-Renders");
+
 
   return (
     <div className="mb-8 md:mb-0">
       <div className="flex gap-4 justify-between items-center my-4">
         <div className="flex gap-4 items-center">
-          <h1 className="text-lg lg:text-2xl font-bold">
+          <h1 className="text-base md:text-lg lg:text-2xl font-bold">
             Multi-Store-Inventory-App
           </h1>
 

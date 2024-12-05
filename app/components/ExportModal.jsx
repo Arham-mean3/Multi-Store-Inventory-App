@@ -1,3 +1,4 @@
+import React, { useContext, useMemo, useState } from "react";
 import {
   Modal,
   LegacyStack,
@@ -6,7 +7,6 @@ import {
   Button,
   Listbox,
 } from "@shopify/polaris";
-import { useContext, useMemo, useState } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
 import {
   currentPageSpecificItemsExport,
@@ -14,7 +14,7 @@ import {
   newInventoryStructureData,
 } from "../lib/extras";
 
-export default function ExportModal({ currentPageData, locations, value }) {
+const ExportModal = React.memo(({ currentPageData, locations, value }) => {
   const CURRENT_PAGE = "current_page";
   const ALL_VARIANTS = "all_variants";
   const SELECTED_ITEMS = "selected_variants";
@@ -227,7 +227,6 @@ export default function ExportModal({ currentPageData, locations, value }) {
     );
   }
 
-  console.log("Dataset", rows);
   const exportToCSV = () => {
     // Transform data into CSV format
     const headers = [
@@ -279,6 +278,8 @@ export default function ExportModal({ currentPageData, locations, value }) {
     <Button onClick={togglePopoverActive}>{locationName}</Button>
   );
 
+  console.log("Export Modal Component Re-Renders");
+
   return (
     <div>
       <Modal
@@ -296,77 +297,82 @@ export default function ExportModal({ currentPageData, locations, value }) {
           },
         ]}
       >
-        <Modal.Section>
-          <LegacyStack vertical>
-            <LegacyStack.Item>
-              <div className="flex gap-4 items-center">
-                <h2>Export Inventory From: </h2>
-                <Popover
-                  active={popoverActive}
-                  activator={activator}
-                  autofocusTarget="first-node"
-                  onClose={togglePopoverActive}
-                >
-                  <Popover.Pane>
-                    <Listbox
-                      accessibilityLabel="Basic Listbox example"
-                      onSelect={handleActiveOptionChange}
-                    >
-                      <Listbox.Option value={"All-Locations"}>
-                        All Locations
-                      </Listbox.Option>
-                      {deselectionLocationData.map((data, index) => {
-                        return (
-                          <div key={index}>
-                            <Listbox.Option
-                              value={data.value}
-                              // selected={selected}
-                            >
-                              {data.label}
-                            </Listbox.Option>
-                          </div>
-                        );
-                      })}
-                    </Listbox>
-                  </Popover.Pane>
-                </Popover>
-                {/* <InventoryPopover /> */}
-              </div>
-            </LegacyStack.Item>
-            <LegacyStack.Item>
-              <ChoiceList
-                title="Export"
-                choices={[
-                  { label: "Current page", value: CURRENT_PAGE },
-                  { label: "All variants", value: ALL_VARIANTS },
-                  {
-                    label: `${selectedItems.length} Selected Items`,
-                    value: SELECTED_ITEMS,
-                    disabled: selectedItems.length === 0,
-                  },
-                ]}
-                selected={selectedExport}
-                onChange={handleSelectedExport}
-              />
-            </LegacyStack.Item>
-            <LegacyStack.Item>
-              <ChoiceList
-                title="Export as"
-                choices={[
-                  {
-                    label:
-                      "CSV for Excel, Numbers, or other spreadsheet programs",
-                    value: CSV_EXCEL,
-                  },
-                  { label: "Plain CSV file", value: CSV_PLAIN },
-                ]}
-                selected={selectedExportAs}
-                onChange={handleSelectedExportAs}
-              />
-            </LegacyStack.Item>
-          </LegacyStack>
-        </Modal.Section>
+        <div className="h-60 lg:h-full">
+          <Modal.Section>
+            <LegacyStack vertical>
+              <LegacyStack.Item>
+                <div className="flex gap-4 items-center">
+                  <h2>Export Inventory From: </h2>
+                  <Popover
+                    active={popoverActive}
+                    activator={activator}
+                    autofocusTarget="first-node"
+                    onClose={togglePopoverActive}
+                  >
+                    <Popover.Pane>
+                      <Listbox
+                        accessibilityLabel="Basic Listbox example"
+                        onSelect={handleActiveOptionChange}
+                      >
+                        <Listbox.Option value={"All-Locations"}>
+                          All Locations
+                        </Listbox.Option>
+                        {deselectionLocationData.map((data, index) => {
+                          return (
+                            <div key={index}>
+                              <Listbox.Option
+                                value={data.value}
+                                // selected={selected}
+                              >
+                                {data.label}
+                              </Listbox.Option>
+                            </div>
+                          );
+                        })}
+                      </Listbox>
+                    </Popover.Pane>
+                  </Popover>
+                  {/* <InventoryPopover /> */}
+                </div>
+              </LegacyStack.Item>
+              <LegacyStack.Item>
+                <ChoiceList
+                  title="Export"
+                  choices={[
+                    { label: "Current page", value: CURRENT_PAGE },
+                    { label: "All variants", value: ALL_VARIANTS },
+                    {
+                      label: `${selectedItems.length} Selected Items`,
+                      value: SELECTED_ITEMS,
+                      disabled: selectedItems.length === 0,
+                    },
+                  ]}
+                  selected={selectedExport}
+                  onChange={handleSelectedExport}
+                />
+              </LegacyStack.Item>
+              <LegacyStack.Item>
+                <ChoiceList
+                  title="Export as"
+                  choices={[
+                    {
+                      label:
+                        "CSV for Excel, Numbers, or other spreadsheet programs",
+                      value: CSV_EXCEL,
+                    },
+                    { label: "Plain CSV file", value: CSV_PLAIN },
+                  ]}
+                  selected={selectedExportAs}
+                  onChange={handleSelectedExportAs}
+                />
+              </LegacyStack.Item>
+            </LegacyStack>
+          </Modal.Section>
+        </div>
       </Modal>
     </div>
   );
-}
+});
+
+ExportModal.displayName = "ExportModal";
+export default ExportModal;

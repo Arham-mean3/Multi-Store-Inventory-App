@@ -10,7 +10,11 @@ import { useIndexResourceState } from "@shopify/polaris";
 import RowMarkup from "./RowMarkup";
 import { InventoryContext } from "../context/Inventory-Context";
 
-export default function Inventory({ data, setPaginatedOrders }) {
+export default function Inventory({
+  data,
+  setPaginatedOrders,
+  InventoryRowUpdate,
+}) {
   const resourceName = {
     singular: "Inventory Item",
     plural: "Inventory Items",
@@ -60,7 +64,7 @@ export default function Inventory({ data, setPaginatedOrders }) {
   );
 
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
-    useIndexResourceState(paginatedOrders);
+    useIndexResourceState(filteredData);
 
   // Pagination Button Next and Previous
 
@@ -92,11 +96,12 @@ export default function Inventory({ data, setPaginatedOrders }) {
     setPaginatedOrders(paginatedOrders);
   }, [handleNextPage, handlePreviousPage]);
 
+  // Everytime you select a items it id will be saved in an array so that if you want to export an item that is selected, here is where we are getting an id for selected items
   useEffect(() => {
     setSelectedItems(selectedResources);
   }, [selectedResources]);
 
-  console.log("Selected Resources", selectedResources);
+  console.log("Inventory Component Re-Renders");
 
   return (
     <>
@@ -119,6 +124,7 @@ export default function Inventory({ data, setPaginatedOrders }) {
         handleSelectionChange={handleSelectionChange}
         setQueryValue={setQueryValue}
         handleFiltersQueryChange={handleFiltersQueryChange}
+        InventoryRowUpdate={InventoryRowUpdate}
       />
     </>
   );

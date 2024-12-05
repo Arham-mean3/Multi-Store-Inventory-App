@@ -68,11 +68,3 @@ export function RightCell({ val, type, id, onValueChange, setAvailable }) {
     </Popover>
   );
 }
-
-//  <Button
-// variant="monochromePlain"
-// onClick={togglePopoverActive}
-// disclosure
-// >
-// Button content or icon
-// </Button>

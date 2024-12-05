@@ -1,8 +1,6 @@
 import { authenticate } from "../shopify.server";
 import Heading from "../components/Heading";
 import Inventory from "../components/Inventory";
-import ExportModal from "../components/ExportModal";
-import ImportModal from "../components/ImportModal";
 import {
   getAllLocations,
   getInventoryItemsQuery,
@@ -17,7 +15,14 @@ import {
   useLoaderData,
   useRevalidator,
 } from "@remix-run/react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { InventoryContext } from "../context/Inventory-Context";
 import { customdata } from "../lib/extras";
 import prisma from "../db.server";
@@ -25,8 +30,9 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { Resend } from "resend";
 import { render } from "@react-email/components";
 import ImportEmailLayout from "../email/Import-Email-Layout";
-import { Button } from "@shopify/polaris";
-import Alert from "../components/Alert";
+
+const ExportModal = lazy(() => import("../components/ExportModal"));
+const ImportModal = lazy(() => import("../components/ImportModal"));
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -477,10 +483,10 @@ export default function Index() {
     columnMissing,
     setMatchData,
     setImportBtn,
-    setChangesArray,
     changesArray,
     selected,
     setSelected,
+    resetChanges,
   } = useContext(InventoryContext);
   // Deselection Of Data
   // Changes
@@ -738,7 +744,7 @@ export default function Index() {
     };
     try {
       await fetcher.submit(formData, { method: "POST" });
-      setChangesArray([]);
+      resetChanges();
     } catch (error) {
       console.log("Something went wrong! --client");
     }
@@ -779,21 +785,20 @@ export default function Index() {
 
   return (
     <div className="mx-4 lg:mx-10">
-      {changesArray.length > 0 && (
-        <Alert InventoryRowUpdate={InventoryRowUpdate} />
-      )}
       <Heading
         location={deselectedLocationData}
         selection={setSelected}
         selectedLocation={selected}
       />
-      <Inventory data={inventoryData} setPaginatedOrders={setPaginatedOrders} />
+      <Inventory data={inventoryData} setPaginatedOrders={setPaginatedOrders} InventoryRowUpdate={InventoryRowUpdate}/>
       <div>
-        <ExportModal
-          locations={deselectedLocationData}
-          currentPageData={paginatedOrders}
-          value={data}
-        />
+        <Suspense fallback={<p>Loading...</p>}>
+          <ExportModal
+            locations={deselectedLocationData}
+            currentPageData={paginatedOrders}
+            value={data}
+          />
+        </Suspense>
         <ImportModal
           active={active}
           InventoryUpdate={InventoryUpdateHandler}
