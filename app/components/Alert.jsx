@@ -8,7 +8,7 @@ export default function Alert({ InventoryRowUpdate }) {
     <div className="sticky top-0 right-0 left-0 z-50 transition-all ease-in-out border-b-[1px] border-gray-400">
       <div className="bg-[#F9F9F9] px-2 py-2">
         <div className="flex justify-between items-center">
-          <p className="text-sm text-black font-semibold">Save Changes</p>
+          <p className="text-xs text-[#8a8a8a] font-normal">Save Changes</p>
           <div className="flex gap-4">
             <Button variant="tertiary" onClick={() => setChangesArray([])}>
               Cancel

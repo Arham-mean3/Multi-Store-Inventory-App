@@ -12,6 +12,9 @@ const INITIAL_STATES = {
   parsedData: [],
   active: true,
   importBtn: false,
+  isLoading: false,
+  exportLoading: false,
+  importLoading: false,
   columnMissing: [],
   matchData: [],
   setActive: () => {},
@@ -23,6 +26,14 @@ const INITIAL_STATES = {
   changesArray: [],
   selected: "",
   selectedItems: [],
+  paginatedOrders: [],
+  fetchData: [],
+  custom: [],
+  cursor: null,
+  selectingForExport: [],
+  setSelectingForExport: () => {},
+  setExportLoading: () => {},
+  setImportLoading: () => {},
   setMatchData: () => {},
   handleImport: () => {},
   handleClose: () => {},
@@ -40,11 +51,23 @@ const INITIAL_STATES = {
   setSelected: () => {},
   setSelectedItems: () => {},
   resetChanges: () => {},
+  setPaginatedOrders: () => {},
+  setFetchData: () => {},
+  setCustom: () => {},
+  setCursor: () => {},
+  setIsLoading: () => {},
 };
 
 export const InventoryContext = createContext(INITIAL_STATES);
 
 export default function InventoryContextProvider({ children }) {
+  // Custom State
+  const [custom, setCustom] = useState([]);
+
+  // Paginated State
+  const [paginatedOrders, setPaginatedOrders] = useState([]);
+  const [fetchData, setFetchData] = useState([]);
+
   // Selected Locations Id
   const [selected, setSelected] = useState("");
 
@@ -54,12 +77,15 @@ export default function InventoryContextProvider({ children }) {
   const [file, setFile] = useState([]);
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
 
   // Export Modal Button State
   const [active, setActive] = useState(false);
-  const [selectedExport, setSelectedExport] = useState(["current_page"]);
+  const [selectedExport, setSelectedExport] = useState(["all_variants"]);
   const [selectedExportAs, setSelectedExportAs] = useState(["csv_plain"]);
   const [popoverActive, setPopoverActive] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [selectingForExport, setSelectingForExport] = useState("");
 
   // Inventory Real-times Row Changes
   const [changesArray, setChangesArray] = useState([]);
@@ -69,6 +95,14 @@ export default function InventoryContextProvider({ children }) {
 
   // Selected Inventory Items For Exporting
   const [selectedItems, setSelectedItems] = useState([]);
+
+  // Cursor for Pagination
+  const [cursor, setCursor] = useState(null);
+
+  // Loading State
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Inventory Data-State
 
   const compulsoryColumns = [
     "Handle",
@@ -227,6 +261,8 @@ export default function InventoryContextProvider({ children }) {
 
   const value = {
     active,
+    importLoading,
+    exportLoading,
     matchData,
     selectedExport,
     selectedExportAs,
@@ -242,6 +278,15 @@ export default function InventoryContextProvider({ children }) {
     changesArray,
     selected,
     selectedItems,
+    paginatedOrders,
+    fetchData,
+    custom,
+    cursor,
+    isLoading,
+    selectingForExport,
+    setSelectingForExport,
+    setExportLoading,
+    setImportLoading,
     setSelectedItems,
     setSelected,
     setLoading,
@@ -260,6 +305,11 @@ export default function InventoryContextProvider({ children }) {
     togglePopoverActive,
     setChangesArray,
     resetChanges,
+    setPaginatedOrders,
+    setFetchData,
+    setCustom,
+    setCursor,
+    setIsLoading,
   };
 
   return (

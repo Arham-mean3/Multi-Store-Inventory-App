@@ -11,10 +11,9 @@ import { useState, useCallback, useContext } from "react";
 import { heading } from "../lib/extras";
 import Alert from "./Alert";
 import { InventoryContext } from "../context/Inventory-Context";
+import { useLoaderData } from "@remix-run/react";
 
 export default function InventoryTable({
-  currentPage,
-  totalPages,
   handleNextPage,
   handlePreviousPage,
   rowMarkup,
@@ -245,8 +244,9 @@ export default function InventoryTable({
   }
 
   const { changesArray } = useContext(InventoryContext);
+  const { pageInfo } = useLoaderData();
 
-  console.log("Handle Selection Changes", handleSelectionChange);
+  const condiitonalPaginate = orders.length < 50;
 
   return (
     <LegacyCard>
@@ -286,12 +286,14 @@ export default function InventoryTable({
         onSelectionChange={handleSelectionChange}
         hasMoreItems
         headings={heading}
-        pagination={{
-          hasNext: currentPage < totalPages - 1,
-          hasPrevious: currentPage > 0,
-          onNext: handleNextPage,
-          onPrevious: handlePreviousPage,
-        }}
+        {...(!condiitonalPaginate && {
+          pagination: {
+            hasNext: pageInfo?.hasNextPage,
+            hasPrevious: pageInfo?.hasPreviousPage,
+            onNext: handleNextPage,
+            onPrevious: handlePreviousPage,
+          },
+        })}
       >
         {rowMarkup}
       </IndexTable>

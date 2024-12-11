@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
   Modal,
   LegacyStack,
@@ -6,6 +6,7 @@ import {
   Popover,
   Button,
   Listbox,
+  Spinner,
 } from "@shopify/polaris";
 import { InventoryContext } from "../context/Inventory-Context";
 import {
@@ -14,10 +15,10 @@ import {
   newInventoryStructureData,
 } from "../lib/extras";
 
-const ExportModal = React.memo(({ currentPageData, locations, value }) => {
-  const CURRENT_PAGE = "current_page";
+const ExportModal = ({ currentPageData, locations, value }) => {
+  // const CURRENT_PAGE = "current_page";
   const ALL_VARIANTS = "all_variants";
-  const SELECTED_ITEMS = "selected_variants";
+  // const SELECTED_ITEMS = "selected_variants";
   const CSV_EXCEL = "csv_excel";
   const CSV_PLAIN = "csv_plain";
 
@@ -30,9 +31,7 @@ const ExportModal = React.memo(({ currentPageData, locations, value }) => {
     [locations],
   );
 
-  const [locationForExport, setLocationForExport] = useState(
-    deselectionLocationData[0].value,
-  );
+  const [locationForExport, setLocationForExport] = useState("All-Locations");
 
   const [locationName, setLocationName] = useState("All-Locations");
 
@@ -46,80 +45,93 @@ const ExportModal = React.memo(({ currentPageData, locations, value }) => {
     selectedExport,
     selectedExportAs,
     togglePopoverActive,
+    selectingForExport,
+    setSelectingForExport,
+    setSelected,
     selectedItems,
+    exportLoading,
   } = useContext(InventoryContext);
 
   const handleActiveOptionChange = (_) => {
     const foundLocation = deselectionLocationData.find(
       (location) => location.value === _,
     );
+
+    // console.log("Selected Location in export ", foundLocation, _);
+
     if (foundLocation) {
       setLocationName(foundLocation.label);
       setLocationForExport(_);
       setPopoverActive(false);
+      setSelectingForExport(_);
     } else {
       setLocationName("All-Locations");
       setLocationForExport("All-Locations");
       setPopoverActive(false);
+      setSelectingForExport("");
     }
   };
 
   let dataset = [];
   let rows;
 
-  if (selectedExport.includes(CURRENT_PAGE)) {
-    const customData = newInventoryStructureData(value);
-    dataset = currentPageSpecificItemsExport(currentPageData, customData);
-    // if (locationForExport === "All-Locations") {
-    rows = dataset.flatMap(
-      ({ variant, COO, hsCode, sku, inventoryLevels, options }) => {
-        const locationsToMap =
-          locationForExport === "All-Locations"
-            ? locations
-            : locations.filter(({ id }) => id === locationForExport);
+  // console.log("Current Page Data", value);
+  // if (selectedExport.includes(CURRENT_PAGE)) {
+  //   const customData = newInventoryStructureData(value);
+  //   dataset = currentPageSpecificItemsExport(currentPageData, customData);
 
-        return locationsToMap.map(({ id: locId, name: locationName }) => {
-          const locationInventory = inventoryLevels.find(
-            (loc) => loc.id === locId,
-          );
-          // Prepare quantities based on location availability
-          const locationQuantities = locationInventory
-            ? {
-                committed: locationInventory.quantities.committed || 0,
-                damaged: locationInventory.quantities.damaged || 0,
-                available: locationInventory.quantities.available || 0,
-                on_hand: locationInventory.quantities.on_hand || 0,
-              }
-            : {
-                committed: "not stocked",
-                damaged: "not stocked",
-                available: "not stocked",
-                on_hand: "not stocked",
-              };
+  //   console.log("Custom Data", customData);
+  //   console.log("Data set", dataset);
+  //   // if (locationForExport === "All-Locations") {
+  //   rows = dataset.flatMap(
+  //     ({ variant, COO, hsCode, sku, inventoryLevels, options }) => {
+  //       const locationsToMap =
+  //         locationForExport === "All-Locations"
+  //           ? locations
+  //           : locations.filter(({ id }) => id === locationForExport);
 
-          return [
-            variant.product.handle,
-            variant.product.title,
-            options[0]?.name || "",
-            options[0]?.values || "",
-            options[1]?.name || "",
-            options[1]?.values || "",
-            options[2]?.name || "",
-            options[2]?.values || "",
-            sku || "",
-            variant.barcode || "",
-            hsCode || "",
-            COO || "",
-            locationName, // Render the location name
-            // locationQuantities.committed,
-            // locationQuantities.damaged,
-            locationQuantities.available,
-            locationQuantities.on_hand,
-          ];
-        });
-      },
-    );
-  }
+  //       return locationsToMap.map(({ id: locId, name: locationName }) => {
+  //         const locationInventory = inventoryLevels.find(
+  //           (loc) => loc.id === locId,
+  //         );
+  //         // Prepare quantities based on location availability
+  //         const locationQuantities = locationInventory
+  //           ? {
+  //               committed: locationInventory.quantities.committed || 0,
+  //               damaged: locationInventory.quantities.damaged || 0,
+  //               available: locationInventory.quantities.available || 0,
+  //               on_hand: locationInventory.quantities.on_hand || 0,
+  //             }
+  //           : {
+  //               committed: "not stocked",
+  //               damaged: "not stocked",
+  //               available: "not stocked",
+  //               on_hand: "not stocked",
+  //             };
+
+  //         return [
+  //           variant.product.handle,
+  //           variant.product.title,
+  //           options[0]?.name || "",
+  //           options[0]?.values || "",
+  //           options[1]?.name || "",
+  //           options[1]?.values || "",
+  //           options[2]?.name || "",
+  //           options[2]?.values || "",
+  //           sku || "",
+  //           variant.barcode || "",
+  //           hsCode || "",
+  //           COO || "",
+  //           locationName, // Render the location name
+  //           // locationQuantities.committed,
+  //           // locationQuantities.damaged,
+  //           locationQuantities.available,
+  //           locationQuantities.on_hand,
+  //         ];
+  //       });
+  //     },
+  //   );
+  // }
   if (selectedExport.includes(ALL_VARIANTS)) {
     dataset = exportDataForMultipleLocationQuantites(value);
     rows = dataset.flatMap(
@@ -171,61 +183,61 @@ const ExportModal = React.memo(({ currentPageData, locations, value }) => {
       },
     );
   }
-  if (selectedExport.includes(SELECTED_ITEMS)) {
-    dataset = exportDataForMultipleLocationQuantites(value);
+  // if (selectedExport.includes(SELECTED_ITEMS)) {
+  //   dataset = exportDataForMultipleLocationQuantites(value);
 
-    // Filter the dataset based on selectedItems
-    const filteredDataset = dataset.filter((data) =>
-      selectedItems.includes(data.id),
-    );
+  //   // Filter the dataset based on selectedItems
+  //   const filteredDataset = dataset.filter((data) =>
+  //     selectedItems.includes(data.id),
+  //   );
 
-    rows = filteredDataset.flatMap(
-      ({ variant, COO, hsCode, sku, inventoryLevels, options }) => {
-        const locationsToMap =
-          locationForExport === "All-Locations"
-            ? locations
-            : locations.filter(({ id }) => id === locationForExport);
+  //   rows = filteredDataset.flatMap(
+  //     ({ variant, COO, hsCode, sku, inventoryLevels, options }) => {
+  //       const locationsToMap =
+  //         locationForExport === "All-Locations"
+  //           ? locations
+  //           : locations.filter(({ id }) => id === locationForExport);
 
-        return locationsToMap.map(({ id: locId, name: locationName }) => {
-          const locationInventory = inventoryLevels.find(
-            (loc) => loc.id === locId,
-          );
-          // Prepare quantities based on location availability
-          const locationQuantities = locationInventory
-            ? {
-                committed: locationInventory.quantities.committed || 0,
-                damaged: locationInventory.quantities.damaged || 0,
-                available: locationInventory.quantities.available || 0,
-                on_hand: locationInventory.quantities.on_hand || 0,
-              }
-            : {
-                committed: "not stocked",
-                damaged: "not stocked",
-                available: "not stocked",
-                on_hand: "not stocked",
-              };
+  //       return locationsToMap.map(({ id: locId, name: locationName }) => {
+  //         const locationInventory = inventoryLevels.find(
+  //           (loc) => loc.id === locId,
+  //         );
+  //         // Prepare quantities based on location availability
+  //         const locationQuantities = locationInventory
+  //           ? {
+  //               committed: locationInventory.quantities.committed || 0,
+  //               damaged: locationInventory.quantities.damaged || 0,
+  //               available: locationInventory.quantities.available || 0,
+  //               on_hand: locationInventory.quantities.on_hand || 0,
+  //             }
+  //           : {
+  //               committed: "not stocked",
+  //               damaged: "not stocked",
+  //               available: "not stocked",
+  //               on_hand: "not stocked",
+  //             };
 
-          return [
-            variant.product.handle,
-            variant.product.title,
-            options[0]?.name || "",
-            options[0]?.values || "",
-            options[1]?.name || "",
-            options[1]?.values || "",
-            options[2]?.name || "",
-            options[2]?.values || "",
-            sku || "",
-            variant.barcode || "",
-            hsCode || "",
-            COO || "",
-            locationName, // Render the location name
-            locationQuantities.available,
-            locationQuantities.on_hand,
-          ];
-        });
-      },
-    );
-  }
+  //         return [
+  //           variant.product.handle,
+  //           variant.product.title,
+  //           options[0]?.name || "",
+  //           options[0]?.values || "",
+  //           options[1]?.name || "",
+  //           options[1]?.values || "",
+  //           options[2]?.name || "",
+  //           options[2]?.values || "",
+  //           sku || "",
+  //           variant.barcode || "",
+  //           hsCode || "",
+  //           COO || "",
+  //           locationName, // Render the location name
+  //           locationQuantities.available,
+  //           locationQuantities.on_hand,
+  //         ];
+  //       });
+  //     },
+  //   );
+  // }
 
   const exportToCSV = () => {
     // Transform data into CSV format
@@ -278,7 +290,7 @@ const ExportModal = React.memo(({ currentPageData, locations, value }) => {
     <Button onClick={togglePopoverActive}>{locationName}</Button>
   );
 
-  console.log("Export Modal Component Re-Renders");
+  // console.log("Export Modal Component Re-Renders");
 
   return (
     <div>
@@ -297,12 +309,28 @@ const ExportModal = React.memo(({ currentPageData, locations, value }) => {
           },
         ]}
       >
+        {/* {exportLoading ? (
+          <div className="w-full h-40 flex justify-center items-center">
+            <div className="flex flex-col gap-4 items-center justify-center">
+              <Spinner size="large" />
+              <p>Loading data...</p>
+            </div>
+          </div>
+        ) : ( */}
         <div className="h-60 lg:h-full">
           <Modal.Section>
             <LegacyStack vertical>
               <LegacyStack.Item>
-                <div className="flex gap-4 items-center">
-                  <h2>Export Inventory From: </h2>
+                <div className="mb-4 bg-yellow-300 p-4 rounded-lg">
+                  <h2 className="text-sm font-medium">
+                    <span className="font-bold">Important Note: </span>Only 250
+                    items can be exported right now.
+                  </h2>
+                </div>
+                <div className="flex gap-3 items-center">
+                  <h2 className="text-sm font-medium">
+                    Export Inventory From:{" "}
+                  </h2>
                   <Popover
                     active={popoverActive}
                     activator={activator}
@@ -339,13 +367,13 @@ const ExportModal = React.memo(({ currentPageData, locations, value }) => {
                 <ChoiceList
                   title="Export"
                   choices={[
-                    { label: "Current page", value: CURRENT_PAGE },
+                    // { label: "Current page", value: CURRENT_PAGE },
                     { label: "All variants", value: ALL_VARIANTS },
-                    {
-                      label: `${selectedItems.length} Selected Items`,
-                      value: SELECTED_ITEMS,
-                      disabled: selectedItems.length === 0,
-                    },
+                    // {
+                    //   label: `${selectedItems.length} Selected Items`,
+                    //   value: SELECTED_ITEMS,
+                    //   disabled: selectedItems.length === 0,
+                    // },
                   ]}
                   selected={selectedExport}
                   onChange={handleSelectedExport}
@@ -369,10 +397,10 @@ const ExportModal = React.memo(({ currentPageData, locations, value }) => {
             </LegacyStack>
           </Modal.Section>
         </div>
+        {/* )} */}
       </Modal>
     </div>
   );
-});
+};
 
-ExportModal.displayName = "ExportModal";
 export default ExportModal;

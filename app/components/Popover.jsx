@@ -3,6 +3,7 @@ import { Icon, Listbox, Popover, Scrollable } from "@shopify/polaris";
 import { CaretDownIcon } from "@shopify/polaris-icons";
 import { InventoryContext } from "../context/Inventory-Context";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { useSearchParams } from "@remix-run/react";
 
 export default function CustomPopover({
   options,
@@ -13,8 +14,9 @@ export default function CustomPopover({
 }) {
   const [popoverActive, setPopoverActive] = useState(false);
   const shopify = useAppBridge();
+  const [searchParams, setSearchParams] = useSearchParams(); // Initialize here
 
-  const { changesArray } = useContext(InventoryContext);
+  const { changesArray, setIsLoading } = useContext(InventoryContext);
 
   const togglePopoverActive = useCallback(
     () => setPopoverActive((popoverActive) => !popoverActive),
@@ -27,9 +29,16 @@ export default function CustomPopover({
         shopify.toast.show("You have unsaved changes.");
         return;
       }
+      setSearchParams({ location: value });
+      setIsLoading(true);
       setLocationId(value);
       selection(value);
       togglePopoverActive(); // Close the Popover
+
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 3500); // Simulate 2 seconds of loading
+      return () => clearTimeout(timer); // Cleanup timeout on unmount
     },
     [selection, togglePopoverActive, changesArray],
   );

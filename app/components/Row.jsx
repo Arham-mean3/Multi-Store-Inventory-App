@@ -38,7 +38,6 @@ export default function Row({
     setOnHand(available + committed + unAvailable);
   }, [resetChanges, available, committed, unAvailable]);
 
-  
   return (
     <IndexTable.Row
       id={id}

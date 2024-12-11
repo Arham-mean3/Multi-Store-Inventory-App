@@ -21,7 +21,6 @@ query inventoryItems {
               name
               values
             }
-            hasOutOfStockVariants
             featuredMedia{
               preview{
                 image{
@@ -140,3 +139,222 @@ query ShopMetafield {
 }
 `;
 
+export const getAfterSpecificInventoryItemsQuery = `
+query inventoryItems($first: Int!, $after: String, $id: ID!) {
+  inventoryItems(first: $first, after: $after) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    edges {
+      cursor
+      node {
+        id
+        sku
+        countryCodeOfOrigin
+        harmonizedSystemCode
+        variant {
+          id
+          barcode
+          inventoryQuantity
+          title
+          sku
+          product {
+            id
+            title
+            handle
+            options {
+              name
+              values
+            }
+            featuredMedia {
+              preview {
+                image {
+                  url
+                }
+              }
+            }
+          }
+        }
+        inventoryLevel(locationId: $id) {
+          location {
+            id
+            address {
+              formatted
+            }
+            name
+          }
+          quantities(
+            names: ["available", "incoming", "committed", "damaged", "on_hand", "quality_control", "reserved", "safety_stock"]
+          ) {
+            name
+            quantity
+            id
+          }
+        }
+      }
+    }
+  }
+}
+
+`;
+
+export const getBeforeSpecificInventoryItemsQuery = `
+query inventoryItems($last: Int!, $before: String, $id: ID!) {
+  inventoryItems(last: $last, before: $before) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+      startCursor
+    }
+    edges {
+      cursor
+      node {
+        id
+        sku
+        countryCodeOfOrigin
+        harmonizedSystemCode
+        variant {
+          id
+          barcode
+          inventoryQuantity
+          title
+          sku
+          product {
+            id
+            title
+            handle
+            options {
+              name
+              values
+            }
+            hasOutOfStockVariants
+            featuredMedia {
+              preview {
+                image {
+                  url
+                }
+              }
+            }
+          }
+        }
+        inventoryLevel(locationId: $id) {
+          location {
+            name
+            address {
+              formatted
+            }
+          }
+          quantities(
+            names: [
+              "available",
+              "incoming",
+              "committed",
+              "damaged",
+              "on_hand",
+              "quality_control",
+              "reserved",
+              "safety_stock"
+            ]
+          ) {
+            name
+            quantity
+            id
+          }
+        }
+      }
+    }
+  }
+}
+
+`;
+export const bulkRunQuery = `
+"""
+{
+  inventoryItems(first: 10) {
+    edges {
+      node {
+        id
+        sku
+        countryCodeOfOrigin
+        harmonizedSystemCode
+        variant {
+          id
+          displayName
+          barcode
+          inventoryQuantity
+          title
+          product{
+            id
+            title
+            handle
+            options{
+              name
+              values
+            }
+            featuredMedia{
+              preview{
+                image{
+                  url
+                  width
+                  height
+                }
+              }
+            }
+          }
+        }
+        inventoryLevels(first: 100){
+          edges{
+            node{
+              location{
+                id
+                address {
+                  formatted
+                }
+                name
+              }
+              quantities(names: ["available", "incoming", "committed", "damaged", "on_hand", "quality_control", "reserved", "safety_stock"]){
+                name
+                quantity
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+    }
+    """`;
+
+export const runBulkQueryOperation = `
+mutation bulkOperationRunQuery {
+  bulkOperationRunQuery(
+    query: ${bulkRunQuery}
+  ) {
+    bulkOperation {
+      id
+      status
+      url
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`;
+
+export const bulkOperationResponseQuery = `
+query BulkOperationQueryUrl {
+  currentBulkOperation(type: QUERY) {
+    id
+    type
+    status
+    fileSize
+    url
+  }
+}`;

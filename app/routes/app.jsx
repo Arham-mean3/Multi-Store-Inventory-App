@@ -1,11 +1,18 @@
 import { json } from "@remix-run/node";
-import { Link, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
+import {
+  Link,
+  Outlet,
+  useLoaderData,
+  useNavigation,
+  useRouteError,
+} from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
 import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import InventoryContextProvider from "../context/Inventory-Context";
+import Loading from "../components/Loading";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -17,7 +24,13 @@ export const loader = async ({ request }) => {
 
 export default function App() {
   const { apiKey } = useLoaderData();
+  const navigation = useNavigation();
+  const currentPathname = navigation.location?.pathname;
+  const isNavigating =
+    ["/app", "/app/additional"].includes(currentPathname) &&
+    navigation.location.search === "";
 
+  // console.log("Pathname", navigation.location);
   return (
     <InventoryContextProvider>
       <AppProvider isEmbeddedApp apiKey={apiKey}>
@@ -25,9 +38,9 @@ export default function App() {
           <Link to="/app" rel="home">
             Home
           </Link>
-          {/* <Link to="/app/additional">Additional page</Link> */}
+          <Link to="/app/additional">Inventory Bulk Edit</Link>
         </NavMenu>
-        <Outlet />
+        {isNavigating ? <Loading text="Loading..." /> : <Outlet />}
       </AppProvider>
     </InventoryContextProvider>
   );

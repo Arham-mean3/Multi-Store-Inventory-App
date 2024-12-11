@@ -1,10 +1,10 @@
 import { authenticate } from "../shopify.server";
-import Heading from "../components/Heading";
-import Inventory from "../components/Inventory";
 import {
+  bulkOperationResponseQuery,
   getAllLocations,
   getInventoryItemsQuery,
   getStoreUrl,
+  runBulkQueryOperation,
   updateInventoryQuantitiesQuery,
   updateProductQuery,
   updateProductVariantQuery,
@@ -14,30 +14,37 @@ import {
   useFetcher,
   useLoaderData,
   useRevalidator,
+  useSearchParams,
 } from "@remix-run/react";
-import {
-  lazy,
-  Suspense,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { InventoryContext } from "../context/Inventory-Context";
-import { customdata } from "../lib/extras";
 import prisma from "../db.server";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { Resend } from "resend";
-import { render } from "@react-email/components";
-import ImportEmailLayout from "../email/Import-Email-Layout";
+// import { Resend } from "resend";
+// import { render } from "@react-email/components";
+// import ImportEmailLayout from "../email/Import-Email-Layout";
+import { Button, Icon } from "@shopify/polaris";
+import ExportModal from "../components/ExportModal";
+import ImportModal from "../components/ImportModal";
+import FeatureImage from "../images/image.jpg";
+import { ExportIcon, ImportIcon } from "@shopify/polaris-icons";
+import { customdata, getDataFromCSVFile } from "../lib/extras";
 
-const ExportModal = lazy(() => import("../components/ExportModal"));
-const ImportModal = lazy(() => import("../components/ImportModal"));
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+// const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
+  const url = new URL(request.url);
+  const type = url.searchParams.get("type") || null;
+  // let data = [];
+  // let buffer = "";
+
+  console.log("Type-----", type);
+
+  //   const bulkOperationQuery = await admin.graphql(`
+  // #graphql
+  // ${runBulkQueryOperation}
+  //     `);
 
   const response = await admin.graphql(
     `#graphql
@@ -52,6 +59,110 @@ export const loader = async ({ request }) => {
   const storeUrlResponse = await admin.graphql(`
     #graphql
     ${getStoreUrl}`);
+
+  // const bulkQueryResult = await bulkOperationQuery.json();
+
+  // const bulkOperationId =
+  //   bulkQueryResult.data?.bulkOperationRunQuery?.bulkOperation?.id;
+
+  // console.log(
+  //   "Bulk Query Responses",
+  //   bulkQueryResult.data.bulkOperationRunQuery.bulkOperation.id,
+  //   "Created",
+  //   bulkQueryResult.data.bulkOperationRunQuery.bulkOperation.status ===
+  //     "CREATED"
+  //     ? true
+  //     : false,
+  // );
+
+  // async function pollBulkOperationStatus(operationId) {
+  //   let status = "RUNNING";
+  //   let response;
+
+  //   while (status === "RUNNING") {
+  //     // Wait 2 seconds before checking again
+  //     await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  //     // Fetch the bulk operation status
+  //     const bulkOperationResponse = await admin.graphql(
+  //       `
+  //     #graphql
+  //       ${bulkOperationResponseQuery}
+  //     `,
+  //       {
+  //         variables: {
+  //           id: operationId,
+  //           type: "QUERY",
+  //           status: "CREATED",
+  //         },
+  //       },
+  //     );
+
+  //     response = await bulkOperationResponse.json();
+  //     status = response.data.currentBulkOperation.status;
+
+  //     console.log("Polling Bulk Operation Status: ", status);
+  //   }
+  //   return response.data.currentBulkOperation;
+  // }
+
+  // // Wait for the bulk operation to complete
+  // const bulkResponse = await pollBulkOperationStatus(bulkOperationId);
+
+  // if (bulkResponse.status === "COMPLETED") {
+  //   console.log("Bulk Operation Completed!");
+  //   console.log("File URL: ", bulkResponse.url);
+
+  //   const response = await fetch(bulkResponse.url);
+
+  //   if (!response.ok) {
+  //     throw new Response("Failed to fetch JSONL file", {
+  //       status: response.status,
+  //     });
+  //   }
+
+  //   const reader = response.body?.getReader();
+  //   const decoder = new TextDecoder("utf-8");
+
+  //   if (reader) {
+  //     while (true) {
+  //       const { done, value } = await reader.read();
+  //       if (done) break;
+
+  //       buffer += decoder.decode(value, { stream: true });
+
+  //       // Process each line
+  //       const lines = buffer.split("\n");
+  //       buffer = lines.pop() || ""; // Keep any incomplete line for the next chunk
+
+  //       for (const line of lines) {
+  //         if (line.trim()) {
+  //           try {
+  //             data.push(JSON.parse(line));
+  //           } catch (error) {
+  //             console.error("Error parsing JSONL line:", line, error);
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   // Handle any remaining line in the buffer
+  //   if (buffer.trim()) {
+  //     try {
+  //       data.push(JSON.parse(buffer));
+  //     } catch (error) {
+  //       console.error("Error parsing remaining JSONL buffer:", buffer, error);
+  //     }
+  //   }
+  // } else {
+  //   console.error(
+  //     "Bulk Operation Failed or Was Canceled: ",
+  //     bulkResponse.status,
+  //   );
+  // }
+
+  // console.log("Data", data);
 
   const result = await response.json();
   const locationResult = await locationResponse.json();
@@ -74,7 +185,7 @@ export const loader = async ({ request }) => {
     locations,
     url: storeUrl.data.shop.url,
     name: storeUrl.data.shop.name,
-    state: processingState?.isActive || false,
+    state: processingState?.isActive,
     processingData: processingData || [],
   });
 };
@@ -105,6 +216,7 @@ export const action = async ({ request }) => {
             {
               message: `Another import is already in progress for ${url}.`,
               success: false,
+              importing: true,
             },
             { status: 409 }, // Conflict
           );
@@ -351,16 +463,16 @@ export const action = async ({ request }) => {
 
         // console.log("Error", errors);
         // Get the number of unique locations
-        const locationCount = uniqueLocationIds.size;
+        // const locationCount = uniqueLocationIds.size;
 
-        const importHTMLTemplate = render(
-          <ImportEmailLayout
-            length={parsedInventoryData.length}
-            size={locationCount}
-            errors={errors}
-            missing={missingColumns}
-          />,
-        );
+        // const importHTMLTemplate = render(
+        //   <ImportEmailLayout
+        //     length={parsedInventoryData.length}
+        //     size={locationCount}
+        //     errors={errors}
+        //     missing={missingColumns}
+        //   />,
+        // );
         // Mark as inactive after completion
         await prisma.processingState.update({
           where: { key: `import_inventory_${url}` },
@@ -374,26 +486,26 @@ export const action = async ({ request }) => {
 
         const result = await response.json();
 
-        const resolvedHTMLTemplate = await importHTMLTemplate;
+        // const resolvedHTMLTemplate = await importHTMLTemplate;
 
-        const { data, error } = await resend.emails.send({
-          from: `${name} <onboarding@resend.dev>`,
-          to: ["arham.khan@mean3.com"],
-          subject: "Importing CSV File Testing!",
-          html: resolvedHTMLTemplate,
-        });
+        // const { data, error } = await resend.emails.send({
+        //   from: `${name} <onboarding@resend.dev>`,
+        //   to: ["arham.khan@mean3.com"],
+        //   subject: "Importing CSV File Testing!",
+        //   html: resolvedHTMLTemplate,
+        // });
 
-        if (error) {
-          console.log("Error while sending an email", error);
-          return json({
-            message: "Error while sending an email",
-            _error: error,
-          });
-        }
+        // if (error) {
+        //   console.log("Error while sending an email", error);
+        //   return json({
+        //     message: "Error while sending an email",
+        //     _error: error,
+        //   });
+        // }
 
-        if (data) {
-          console.log("Successfully email", data);
-        }
+        // if (data) {
+        //   console.log("Successfully email", data);
+        // }
 
         return json(
           {
@@ -414,45 +526,6 @@ export const action = async ({ request }) => {
           { status: 404 },
         );
       }
-    case "RowUpdates":
-      try {
-        const { data } = formData;
-
-        const quantities = JSON.parse(data);
-
-        console.log("Quantities", quantities);
-
-        // Updating Queries Inventory Items Quantities
-        const updatedInventoryItemsQuantity = await admin.graphql(
-          `#graphql
-          ${updateInventoryQuantitiesQuery}
-          `,
-          {
-            variables: {
-              input: {
-                reason: "correction",
-                name: "available",
-                ignoreCompareQuantity: true,
-                quantities: quantities,
-              },
-            },
-          },
-        );
-        const updateItems = await updatedInventoryItemsQuantity.json();
-
-        return json(
-          {
-            message: "Successfully Inventory Items Updated!",
-            success: true,
-          },
-          { status: 201 },
-        );
-      } catch (error) {
-        return json(
-          { message: "Something went wrong!", error: error, success: false },
-          { status: 404 },
-        );
-      }
     default:
       break;
   }
@@ -460,7 +533,7 @@ export const action = async ({ request }) => {
 
 export default function Index() {
   // GET-DATA-FROM-SERVER-HERE--------------
-  const { data, locations, url, name } = useLoaderData();
+  const { data, locations, url, name, state } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
   const isLoading =
@@ -469,111 +542,33 @@ export default function Index() {
   const revalidator = useRevalidator();
 
   // STATE-HANDLING-START-START-HERE
-  const [fetchData, setFetchData] = useState(data);
-  // const [currentPage, setCurrentPage] = useState(0);
-  const [custom, setCustom] = useState([]);
   const [showTimeUser, setShowTimeUser] = useState(0);
   const [active, setActive] = useState(false);
-  const [paginatedOrders, setPaginatedOrders] = useState([]);
   // STATE-HANDLING-START-END-HERE
+
   const {
-    transformedData,
+    custom,
     setLocations,
     matchData,
     columnMissing,
-    setMatchData,
-    setImportBtn,
-    changesArray,
+    paginatedOrders,
+    transformedData,
     selected,
-    setSelected,
-    resetChanges,
+    setImportBtn,
+    setFetchData,
+    handleModalChange,
+    toggleImport,
+    selectingForExport,
+    setExportLoading,
+    setImportLoading,
+    setCustom,
+    setMatchData,
   } = useContext(InventoryContext);
-  // Deselection Of Data
-  // Changes
-  // Components Usage and Excel File Usage
-
-  const deselectedLocationData = useMemo(
-    () =>
-      locations.map(({ node }) => ({
-        id: node.id,
-        name: node.name,
-        address: node.address.formatted,
-      })),
-    [locations],
-  );
-
-  // const deselectedInventoryData = useMemo(
-  //   () =>
-  //     fetchData.map(({ node }) => {
-  //       const {
-  //         id,
-  //         sku,
-  //         countryCodeOfOrigin: COO,
-  //         harmonizedSystemCode: hsCode,
-  //         variant,
-  //       } = node;
-  //       const { product } = variant;
-
-  //       // Find matching options based on the variant title
-  //       const options = product.options.flatMap((option) => {
-  //         // Check if the option.values array has more than one value
-  //         if (option.values.length > 1) {
-  //           // Filter and map matched values
-  //           const matchedValues = option.values
-  //             .filter((value) => value === variant.title)
-  //             .map((value) => ({
-  //               name: option.name,
-  //               value,
-  //             }));
-
-  //           // Return matched options if any
-  //           if (matchedValues.length > 0) {
-  //             return matchedValues;
-  //           }
-  //         }
-
-  //         // Fallback: Return the original option with its values
-  //         return {
-  //           name: option.name,
-  //           values: option.values, // Include all values for options with a single value or no match
-  //         };
-  //       });
-
-  //       // Compute quantities for the selected location
-  //       const quantities = node.inventoryLevels.edges.reduce(
-  //         (acc, { node }) => {
-  //           if (selected && node.location.id === selected) {
-  //             node.quantities.forEach(({ name, quantity }) => {
-  //               acc[name] = quantity;
-  //             });
-  //           }
-  //           return acc;
-  //         },
-  //         {},
-  //       );
-
-  //       return {
-  //         id,
-  //         sku,
-  //         COO,
-  //         hsCode,
-  //         variant,
-  //         quantities,
-  //         inventoryLevels: {
-  //           location: node.inventoryLevels.edges.map(
-  //             ({ node }) => node.location.id,
-  //           ),
-  //         },
-  //         options, // Add matchOptions to the result
-  //       };
-  //     }),
-  //   [fetchData, selected],
-  // );
 
   const deselectedInventoryData = useMemo(() => {
-    if (!fetchData) return [];
+    if (!data) return [];
 
-    return fetchData.map(({ node }) => {
+    return data.map(({ node }) => {
       const {
         id,
         sku,
@@ -622,10 +617,11 @@ export default function Index() {
         options,
       };
     });
-  }, [fetchData, selected]);
+  }, [data, selected]);
 
   const filteredInventoryData = useMemo(() => {
-    if (!selected) return deselectedInventoryData; // If no location is selected, return all data
+    if (!selectingForExport || selectingForExport === "")
+      return deselectedInventoryData; // If no location is selected, return all data
 
     // Filter by selected location ID
     return deselectedInventoryData
@@ -633,66 +629,35 @@ export default function Index() {
         ...item,
         inventoryLevels: {
           location: item.inventoryLevels.location.filter(
-            (locationId) => locationId === selected,
+            (locationId) => locationId === selectingForExport,
           ),
         },
       }))
       .filter((item) => item.inventoryLevels.location.length > 0); // Remove items with no matching inventoryLevels
-  }, [selected, data]);
+  }, [selectingForExport, data]);
 
   let inventoryData = filteredInventoryData;
 
-  let matchedData = transformedData
-    .map((parsedItem) => {
-      // Find a matching record in customdata
-      const matchingItem = custom.find((customItem) => {
-        // Match SKU, variant title, product title, or other relevant fields
-        const isMatch =
-          customItem.variant.title === parsedItem.variant.title &&
-          customItem.variant.product.title === parsedItem.variant.product.title;
+  // console.log("Inventory Data", inventoryData);
 
-        // Check if the location matches any in inventoryLevels
-        const locationMatch = customItem.inventoryLevels.location.some(
-          (loc) => loc.name === parsedItem.location,
-        );
+  // Deselection Of Data
 
-        return isMatch && locationMatch;
-      });
+  // URL PARAMS
+  // const [searchParams, setSearchParams] = useSearchParams();
 
-      // console.log("Matched Items", matchingItem);
+  // console.log("Search Params", searchParams.get("type"));
+  // Changes
+  // Components Usage and Excel File Usage
 
-      if (matchingItem) {
-        return {
-          id: matchingItem.id, // Include the ID from customdata
-          location: parsedItem.location, // Include matched location
-          product: {
-            id: matchingItem.product.id,
-            title: parsedItem.variant.product.title,
-            handle: parsedItem.variant.product.handle,
-            variant: {
-              id: matchingItem.variant.id,
-              title: parsedItem.variant.title,
-              barcode: parsedItem.variant.barCode,
-              inventoryItems: {
-                COO: parsedItem.COO || matchingItem.COO,
-                hsCode: parsedItem.hsCode || matchingItem.hsCode,
-                sku: parsedItem.sku, // Use parsed data or fallback to customdata
-              },
-            },
-          },
-          inventoryLevels: {
-            location: matchingItem.inventoryLevels.location.find(
-              (loc) => loc.name === parsedItem.location,
-            ), // Add the matched location details
-            quantities: parsedItem.quantities, // Quantities from customdata
-          },
-        };
-      }
-
-      // Optionally, handle unmatched cases
-      return null;
-    })
-    .filter((item) => item !== null); // Filter out unmatched records
+  const deselectedLocationData = useMemo(
+    () =>
+      locations.map(({ node }) => ({
+        id: node.id,
+        name: node.name,
+        address: node.address.formatted,
+      })),
+    [locations],
+  );
 
   // Inventory Import Functionality
   const InventoryUpdateHandler = async () => {
@@ -718,9 +683,7 @@ export default function Index() {
     }
 
     setShowTimeUser(timeDisplay); // Set the display time upfront
-
     try {
-      console.log("API-CALL", formData);
       await fetcher.submit(formData, { method: "POST" });
       setImportBtn(false);
       setActive(true);
@@ -735,34 +698,16 @@ export default function Index() {
     }
   };
 
-  // Inventory Row Available Update Functionality
+  const newCustom = useMemo(() => customdata(data), [data]);
 
-  const InventoryRowUpdate = async () => {
-    const formData = {
-      actionKey: "RowUpdates",
-      data: JSON.stringify(changesArray),
-    };
-    try {
-      await fetcher.submit(formData, { method: "POST" });
-      resetChanges();
-    } catch (error) {
-      console.log("Something went wrong! --client");
-    }
-  };
-
-  useEffect(() => {
-    const custom = customdata(data);
-    setCustom(custom);
-  }, []);
+  const stableTransformedData = useMemo(
+    () => transformedData,
+    [transformedData],
+  );
 
   useEffect(() => {
     setLocations(deselectedLocationData);
   }, [deselectedLocationData]);
-
-  useEffect(() => {
-    console.log("Matched Data", matchedData);
-    setMatchData(matchedData);
-  }, [matchedData.length > 0]);
 
   useEffect(() => {
     if (isLoading) {
@@ -772,34 +717,104 @@ export default function Index() {
 
   useEffect(() => {
     setFetchData(data);
-  }, [data]);
+    setCustom(newCustom);
+  }, [data, newCustom]);
 
   useEffect(() => {
     if (fetcher.data?.success) {
       // console.log("New Data", data);
       setFetchData(data);
+      console.log("Data with updating");
       // console.log("fetcher json 2", fetcher.data);
       // shopify.toast.show("Data Updated Sucessfully");
     }
   }, [fetcher.data?.success]);
 
+  const matched = getDataFromCSVFile(stableTransformedData, custom);
+
+  useEffect(() => {
+    // console.log("Match Data", matched);
+    setMatchData(matched);
+  }, [matched.length > 0]);
+
+
+  console.log("Current Importing State", state);1 
+  
   return (
-    <div className="mx-4 lg:mx-10">
-      <Heading
-        location={deselectedLocationData}
-        selection={setSelected}
-        selectedLocation={selected}
-      />
-      <Inventory data={inventoryData} setPaginatedOrders={setPaginatedOrders} InventoryRowUpdate={InventoryRowUpdate}/>
+    <div className="h-screen">
+      <h1 className="mx-4 my-2">Multi-Store-Inventory App</h1>
+      <div className="mx-4 h-[500px] bg-white border-[1px] border-gray-300 rounded-lg px-2 py-8 lg:py-6 shadow-lg cursor-pointer">
+        <div className="h-full flex justify-center items-center gap-4">
+          <div className="space-y-8 lg:space-y-6 flex flex-col justify-center items-center">
+            <img
+              src={FeatureImage}
+              alt="Feature-Image"
+              className="w-40 h-40 md:w-60 md:h-60 rounded-full object-cover"
+            />
+            <h1 className="w-full text-center text-lg md:text-xl font-bold">
+              Welcome to Multi-Store-Inventory-App
+            </h1>
+            <p className="text-sm text-center w-[80%] md:w-[90%]">
+              Manage your inventory items on multiple locations easily with the
+              features of real times changes and with importing relevant CSV
+              files. Thank you.
+            </p>
+            <div className="space-x-6">
+              <Button
+                size="large"
+                variant="secondary"
+                onClick={() => {
+                  // setSearchParams({ type: "Export" });
+                  // const thereIsExportType =
+                  //   searchParams.get("type") === "Export";
+                  // if (!thereIsExportType) {
+                  //   setExportLoading(true);
+                  //   setTimeout(() => {
+                  //     setExportLoading(false);
+                  //   }, 4000);
+                  // }
+
+                  handleModalChange();
+                }}
+              >
+                <div className="flex gap-2 items-center px-2 py-1">
+                  <Icon source={ExportIcon} tone="base" />
+                  <p>Export</p>
+                </div>
+              </Button>
+              <Button
+                size="large"
+                variant="primary"
+                onClick={() => {
+                  // setSearchParams({ type: "Import" });
+                  // const thereIsImportType =
+                  //   searchParams.get("type") === "Import";
+                  // if (!thereIsImportType) {
+                  //   setImportLoading(true);
+                  //   setTimeout(() => {
+                  //     setImportLoading(false);
+                  //   }, 4000);
+                  // }
+                  toggleImport();
+                }}
+              >
+                <div className="flex gap-2 items-center px-2 py-1">
+                  <Icon source={ImportIcon} tone="base" />
+                  <p>Import</p>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div>
-        <Suspense fallback={<p>Loading...</p>}>
-          <ExportModal
-            locations={deselectedLocationData}
-            currentPageData={paginatedOrders}
-            value={data}
-          />
-        </Suspense>
+        <ExportModal
+          locations={deselectedLocationData}
+          // currentPageData={paginatedOrders}
+          value={data}
+        />
         <ImportModal
+          state={state}
           active={active}
           InventoryUpdate={InventoryUpdateHandler}
           timeShown={showTimeUser}

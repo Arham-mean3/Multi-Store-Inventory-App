@@ -9,12 +9,10 @@ import InventoryTable from "./InventoryTable";
 import { useIndexResourceState } from "@shopify/polaris";
 import RowMarkup from "./RowMarkup";
 import { InventoryContext } from "../context/Inventory-Context";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 
-export default function Inventory({
-  data,
-  setPaginatedOrders,
-  InventoryRowUpdate,
-}) {
+export default function Inventory({ data, InventoryRowUpdate }) {
+  const { pageInfo } = useLoaderData();
   const resourceName = {
     singular: "Inventory Item",
     plural: "Inventory Items",
@@ -24,6 +22,8 @@ export default function Inventory({
   const [queryValue, setQueryValue] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // Getting the value of what is type inside the search input
   const handleFiltersQueryChange = useCallback(
     (value) => setQueryValue(value),
@@ -31,7 +31,8 @@ export default function Inventory({
   );
 
   // Changes Array
-  const { changesArray, setSelectedItems } = useContext(InventoryContext);
+  const { changesArray, setSelectedItems, selected, setCursor } =
+    useContext(InventoryContext);
 
   // For finding or querying or searching a items from the search sections
 
@@ -54,14 +55,14 @@ export default function Inventory({
 
   // Applying Pagination
 
-  const paginatedOrders = useMemo(
-    () =>
-      filteredData.slice(
-        currentPage * itemsPerPage,
-        (currentPage + 1) * itemsPerPage,
-      ),
-    [filteredData, currentPage],
-  );
+  // const paginatedOrders = useMemo(
+  //   () =>
+  //     filteredData.slice(
+  //       currentPage * itemsPerPage,
+  //       (currentPage + 1) * itemsPerPage,
+  //     ),
+  //   [filteredData, currentPage],
+  // );
 
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
     useIndexResourceState(filteredData);
@@ -70,31 +71,73 @@ export default function Inventory({
 
   const handleNextPage = useCallback(() => {
     if (changesArray.length === 0) {
-      if (currentPage < totalPages - 1) {
-        setCurrentPage(currentPage + 1);
+      if (pageInfo?.hasNextPage) {
+        const nextCursor = pageInfo.endCursor;
+        setCursor(nextCursor);
+        setSearchParams((prevParams) => {
+          const params = new URLSearchParams(prevParams);
+          params.set("location", selected);
+          params.set("after", nextCursor);
+          return params;
+        });
       }
     } else {
       console.log("Changes Array Length", changesArray.length);
       shopify.toast.show("You have unsaved changes.");
     }
-  }, [totalPages, currentPage, changesArray]);
+  }, [
+    changesArray,
+    selected,
+    pageInfo.endCursor,
+    pageInfo?.hasNextPage,
+    setSearchParams,
+    setCursor,
+  ]);
 
   const handlePreviousPage = useCallback(() => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
+    if (changesArray.length === 0) {
+      if (pageInfo?.hasPreviousPage && pageInfo.startCursor) {
+        const prevCursor = pageInfo.startCursor;
+        console.log("Previous Cursor:", prevCursor);
+
+        // Update local cursor state
+        setCursor(prevCursor);
+
+        // Merge and update search params
+        setSearchParams((prevParams) => {
+          const params = new URLSearchParams(prevParams);
+          console.log("Existing Params Before Update:", params.toString());
+
+          // Update "location" and "cursor" in the params
+          params.set("location", selected);
+          params.set("before", prevCursor);
+
+          console.log("Updated Params:", params.toString());
+          return params;
+        });
+      } else {
+        console.log("No previous page available or cursor is null.");
+      }
+    } else {
+      console.log("Changes Array Length", changesArray.length);
+      shopify.toast.show("You have unsaved changes.");
     }
-  }, [currentPage]);
+  }, [
+    changesArray.length,
+    pageInfo?.hasPreviousPage,
+    pageInfo?.startCursor,
+    selected,
+    setCursor,
+    setSearchParams,
+  ]);
 
   // When Viewing Inventory Items for different locations, the pagination should be zero in order to view first items of other locations
-  useEffect(() => {
-    setCurrentPage(0); // Reset currentPage on data change
-  }, [data]);
 
   // This is required by the Export Modal Component if the current page is exported!
 
-  useEffect(() => {
-    setPaginatedOrders(paginatedOrders);
-  }, [handleNextPage, handlePreviousPage]);
+  // useEffect(() => {
+  //   setPaginatedOrders(paginatedOrders);
+  // }, [handleNextPage, handlePreviousPage]);
 
   // Everytime you select a items it id will be saved in an array so that if you want to export an item that is selected, here is where we are getting an id for selected items
   useEffect(() => {
@@ -104,12 +147,12 @@ export default function Inventory({
   console.log("Inventory Component Re-Renders");
 
   return (
-    <>
+    <div className="mb-8">
       <InventoryTable
         orders={filteredData}
         rowMarkup={
           <RowMarkup
-            paginatedOrders={paginatedOrders}
+            paginatedOrders={filteredData}
             selectedResources={selectedResources}
           />
         }
@@ -126,6 +169,6 @@ export default function Inventory({
         handleFiltersQueryChange={handleFiltersQueryChange}
         InventoryRowUpdate={InventoryRowUpdate}
       />
-    </>
+    </div>
   );
 }

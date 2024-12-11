@@ -1,16 +1,9 @@
-import { Button, Listbox, Popover, Scrollable } from "@shopify/polaris";
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { InventoryContext } from "../context/Inventory-Context";
+import React, { useEffect, useMemo, useState } from "react";
 import CustomPopover from "./Popover";
+import { useSearchParams } from "@remix-run/react";
 
 function Heading({ location, selection }) {
-  const { handleModalChange, toggleImport } = useContext(InventoryContext);
+  const [searchParams, setSearchParams] = useSearchParams(); // Initialize here
   const [selected, setSelected] = useState(location);
   const [locationId, setLocationId] = useState(selected[1].id);
 
@@ -32,7 +25,6 @@ function Heading({ location, selection }) {
 
   console.log("Heading Component Re-Renders");
 
-
   return (
     <div className="mb-8 md:mb-0">
       <div className="flex gap-4 justify-between items-center my-4">
@@ -50,14 +42,6 @@ function Heading({ location, selection }) {
               locationMap={locationMap}
             />
           </div>
-        </div>
-        <div className="flex gap-4 md:items-center">
-          <Button variant="secondary" onClick={handleModalChange}>
-            Export
-          </Button>
-          <Button variant="primary" onClick={toggleImport}>
-            Import
-          </Button>
         </div>
       </div>
 
