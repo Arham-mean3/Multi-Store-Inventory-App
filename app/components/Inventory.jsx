@@ -144,8 +144,6 @@ export default function Inventory({ data, InventoryRowUpdate }) {
     setSelectedItems(selectedResources);
   }, [selectedResources]);
 
-  console.log("Inventory Component Re-Renders");
-
   return (
     <div className="mb-8">
       <InventoryTable
@@ -168,6 +166,7 @@ export default function Inventory({ data, InventoryRowUpdate }) {
         setQueryValue={setQueryValue}
         handleFiltersQueryChange={handleFiltersQueryChange}
         InventoryRowUpdate={InventoryRowUpdate}
+        searchParams={searchParams}
       />
     </div>
   );

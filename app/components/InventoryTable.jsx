@@ -26,6 +26,7 @@ export default function InventoryTable({
   setQueryValue,
   handleFiltersQueryChange,
   InventoryRowUpdate,
+  searchParams,
 }) {
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   // Top of Table Header
@@ -245,8 +246,13 @@ export default function InventoryTable({
 
   const { changesArray } = useContext(InventoryContext);
   const { pageInfo } = useLoaderData();
+  
+  // Check if searchParams contain only 'location' field
+  const hasOnlyLocationField =
+    Array.from(searchParams.keys()).length === 1 &&
+    searchParams.has("location");
 
-  const condiitonalPaginate = orders.length < 50;
+  const condiitonalPaginate = hasOnlyLocationField && orders.length < 50;
 
   return (
     <LegacyCard>
@@ -286,14 +292,21 @@ export default function InventoryTable({
         onSelectionChange={handleSelectionChange}
         hasMoreItems
         headings={heading}
-        {...(!condiitonalPaginate && {
-          pagination: {
-            hasNext: pageInfo?.hasNextPage,
-            hasPrevious: pageInfo?.hasPreviousPage,
-            onNext: handleNextPage,
-            onPrevious: handlePreviousPage,
-          },
-        })}
+        {...(condiitonalPaginate
+          ? {
+              pagination: {
+                hasNext: false,
+                hasPrevious: false,
+              },
+            }
+          : {
+              pagination: {
+                hasNext: pageInfo?.hasNextPage,
+                hasPrevious: pageInfo?.hasPreviousPage,
+                onNext: handleNextPage,
+                onPrevious: handlePreviousPage,
+              },
+            })}
       >
         {rowMarkup}
       </IndexTable>

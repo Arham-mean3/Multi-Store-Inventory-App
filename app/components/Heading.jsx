@@ -5,7 +5,9 @@ import { useSearchParams } from "@remix-run/react";
 function Heading({ location, selection }) {
   const [searchParams, setSearchParams] = useSearchParams(); // Initialize here
   const [selected, setSelected] = useState(location);
-  const [locationId, setLocationId] = useState(selected[1].id);
+  const [locationId, setLocationId] = useState(
+    searchParams.get("location") || selected[1].id,
+  );
 
   // Memoize the map for fast lookups
   const locationMap = useMemo(
@@ -22,8 +24,6 @@ function Heading({ location, selection }) {
     value: loc.id,
     id: loc.id,
   }));
-
-  console.log("Heading Component Re-Renders");
 
   return (
     <div className="mb-8 md:mb-0">

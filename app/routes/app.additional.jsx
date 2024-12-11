@@ -1,7 +1,11 @@
 import React, { useContext, useEffect } from "react";
 import Inventory from "../components/Inventory";
 import Heading from "../components/Heading";
-import { json, useFetcher, useLoaderData } from "@remix-run/react";
+import {
+  json,
+  useFetcher,
+  useLoaderData,
+} from "@remix-run/react";
 import { authenticate } from "../shopify.server";
 import {
   getAllLocations,
@@ -337,7 +341,7 @@ export const action = async ({ request }) => {
   }
 };
 export default function AdditionalPage() {
-  const { data, locations, pageInfo } = useLoaderData();
+  const { data, locations } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
   const {
@@ -376,7 +380,7 @@ export default function AdditionalPage() {
       console.log("Something went wrong! --client");
     }
   };
-
+  
   return (
     <div className="mx-4 lg:mx-10 pb-1">
       <Heading

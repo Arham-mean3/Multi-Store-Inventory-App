@@ -146,7 +146,7 @@ export default function InventoryContextProvider({ children }) {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          console.log("Parsed Data:", results.data);
+          // console.log("Parsed Data:", results.data);
           setParsedData(results.data); // Save parsed data to context/state
 
           // Validate columns
@@ -156,7 +156,7 @@ export default function InventoryContextProvider({ children }) {
           );
 
           if (missingColumns.length > 0) {
-            console.error("Missing Columns:", missingColumns);
+            // console.error("Missing Columns:", missingColumns);
             setColumnMissing([...new Set(missingColumns)]); // Set new errors
           } else {
             setColumnMissing([]); // Clear errors if none are missing
@@ -167,7 +167,7 @@ export default function InventoryContextProvider({ children }) {
           }, 1000);
         },
         error: (error) => {
-          console.error("Error parsing CSV:", error);
+          // console.error("Error parsing CSV:", error);
           setLoading(false); // Stop loading immediately on error
         },
       });

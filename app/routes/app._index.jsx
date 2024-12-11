@@ -675,10 +675,10 @@ export default function Index() {
     // Calculate time for user (seconds or minutes)
     let timeDisplay;
     if (timeForUser <= 60) {
-      console.log(timeForUser, "sec");
+      // console.log(timeForUser, "sec");
       timeDisplay = `${timeForUser.toFixed(2)} sec`; // Show time in seconds if it's <= 60 seconds
     } else {
-      console.log(timeForUser / 60, "min");
+      // console.log(timeForUser / 60, "min");
       timeDisplay = `${(timeForUser / 60).toFixed(2)} mins`; // Show time in minutes if it's > 60 seconds
     }
 
@@ -724,7 +724,7 @@ export default function Index() {
     if (fetcher.data?.success) {
       // console.log("New Data", data);
       setFetchData(data);
-      console.log("Data with updating");
+      // console.log("Data with updating");
       // console.log("fetcher json 2", fetcher.data);
       // shopify.toast.show("Data Updated Sucessfully");
     }
@@ -737,9 +737,6 @@ export default function Index() {
     setMatchData(matched);
   }, [matched.length > 0]);
 
-
-  console.log("Current Importing State", state);1 
-  
   return (
     <div className="h-screen">
       <h1 className="mx-4 my-2">Multi-Store-Inventory App</h1>
