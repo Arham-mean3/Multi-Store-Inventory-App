@@ -38,7 +38,7 @@ export default function App() {
           <Link to="/app" rel="home">
             Home
           </Link>
-          <Link to="/app/additional">Inventory Bulk Edit</Link>
+          <Link to="/app/bulk">Stock Bulk Edit</Link>
         </NavMenu>
         {isNavigating ? <Loading text="Loading..." /> : <Outlet />}
       </AppProvider>

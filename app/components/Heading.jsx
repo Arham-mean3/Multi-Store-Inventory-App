@@ -30,7 +30,7 @@ function Heading({ location, selection }) {
       <div className="flex gap-4 justify-between items-center my-4">
         <div className="flex gap-4 items-center">
           <h1 className="text-base md:text-lg lg:text-2xl font-bold">
-            Multi-Store-Inventory-App
+            Smart Stock App
           </h1>
 
           <div className="hidden md:block">

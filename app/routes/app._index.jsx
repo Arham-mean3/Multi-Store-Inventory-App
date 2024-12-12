@@ -739,7 +739,7 @@ export default function Index() {
 
   return (
     <div className="h-screen">
-      <h1 className="mx-4 my-2">Multi-Store-Inventory App</h1>
+      <h1 className="mx-4 my-2">Stock Smart App</h1>
       <div className="mx-4 h-[500px] bg-white border-[1px] border-gray-300 rounded-lg px-2 py-8 lg:py-6 shadow-lg cursor-pointer">
         <div className="h-full flex justify-center items-center gap-4">
           <div className="space-y-8 lg:space-y-6 flex flex-col justify-center items-center">
@@ -749,7 +749,7 @@ export default function Index() {
               className="w-40 h-40 md:w-60 md:h-60 rounded-full object-cover"
             />
             <h1 className="w-full text-center text-lg md:text-xl font-bold">
-              Welcome to Multi-Store-Inventory-App
+              Welcome to Stock Smart-App
             </h1>
             <p className="text-sm text-center w-[80%] md:w-[90%]">
               Manage your inventory items on multiple locations easily with the
